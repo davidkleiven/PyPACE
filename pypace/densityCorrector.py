@@ -5,14 +5,17 @@ mpl.rcParams["axes.unicode_minus"] = False
 from matplotlib import pyplot as plt
 import segmentor as seg
 import qWeighting as qw
+import projectionApprox as pa
 
 
 class DensityCorrector(object):
-    def __init__( self, reconstructedFname, kspaceFname ):
+    def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize ):
         self.reconstructed = np.load( reconstructedFname ).astype(np.float64)
         self.kspace = np.load( kspaceFname )
         self.segmentor = seg.Segmentor(self.reconstructed)
         self.qweight = qw.Qweight( self.kspace )
+        self.projector = pa.ProjectionPropagator( self.reconstructed, wavelength, voxelsize )
+        self.newKspace = None
 
     def plotRec( self, show=False, cmap="inferno" ):
         """
@@ -41,7 +44,7 @@ class DensityCorrector(object):
         ax3.set_title("yz-plane")
         return fig, [ax1,ax2,ax3]
 
-    def plotKspace( self, cmap="inferno" ):
+    def plotKspace( self, data, cmap="inferno" ):
         """
         Plots cuts in the kspace scattering pattern of the object
         Returns:
@@ -49,22 +52,22 @@ class DensityCorrector(object):
         fig: Figure object
         [ax1,ax2,ax3]: array of the three ax objects describing the subplots
         """
-        assert( len(self.kspace.shape) == 3 )
+        assert( len(data.shape) == 3 )
         fig = plt.figure()
         ax1 = fig.add_subplot(1,3,1)
-        centerX = int(self.kspace.shape[0]/2)
-        centerY = int(self.kspace.shape[1]/2)
-        centerZ = int(self.kspace.shape[2]/2)
+        centerX = int(data.shape[0]/2)
+        centerY = int(data.shape[1]/2)
+        centerZ = int(data.shape[2]/2)
 
-        ax1.imshow( self.kspace[:,:,centerZ], cmap=cmap, norm=mpl.colors.LogNorm() )
+        ax1.imshow( data[:,:,centerZ], cmap=cmap, norm=mpl.colors.LogNorm() )
         ax1.set_title("$k_xk_y$-plane")
 
         ax2 = fig.add_subplot(1,3,2)
-        ax2.imshow( self.kspace[:,centerY,:], cmap=cmap, norm=mpl.colors.LogNorm() )
+        ax2.imshow( data[:,centerY,:], cmap=cmap, norm=mpl.colors.LogNorm() )
         ax2.set_title("$k_xk_z$-plane")
 
         ax3 = fig.add_subplot(1,3,3)
-        ax3.imshow( self.kspace[centerX,:,:], cmap=cmap, norm=mpl.colors.LogNorm() )
+        ax3.imshow( data[centerX,:,:], cmap=cmap, norm=mpl.colors.LogNorm() )
         ax3.set_title("$k_yk_z$-plane")
         return fig, [ax1,ax2,ax3]
 
@@ -94,3 +97,6 @@ class DensityCorrector(object):
         ax[-1].imshow(data[centerX,:,:], cmap=cmap)
         fig.suptitle("Cluser %d"%(cluster))
         return fig, ax
+
+    def buildKspace( self, angleStepDeg ):
+        self.newKspace = self.projector.generateKspace( angleStepDeg )
