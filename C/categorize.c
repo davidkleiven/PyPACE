@@ -151,8 +151,71 @@ static PyObject* categorize( PyObject *self, PyObject *obj )
   Py_RETURN_FALSE;
 }
 
+static PyObject* radialMean( PyObject* self, PyObject *args )
+{
+  PyObject *data = NULL;
+  int Nbins = 0;
+
+  if ( !PyArg_ParseTuple( args, "Oi", &data, &Nbins ) )
+  {
+    PyErr_SetString( PyExc_TypeError, "Wrong argument types in fucntion radialMean" );
+    return NULL;
+  }
+
+  PyObject *npdata = PyArray_FROM_OTF( data, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY );
+  npy_intp* dims = PyArray_DIMS( npdata );
+  int nd = PyArray_NDIM( npdata );
+  if ( nd != 3 )
+  {
+    PyErr_SetString( PyExc_ValueError, "Number of dimensions of python array has to be 3" );
+    return NULL;
+  }
+
+  double rmax = 0.5*sqrt( dims[0]*dims[0] + dims[1]*dims[1] + dims[2]*dims[2] );
+  double x0 = 0.5*dims[0];
+  double y0 = 0.5*dims[1];
+  double z0 = 0.5*dims[2];
+  double rAvg[Nbins];
+  int rCount[Nbins];
+
+  // Initialize arrays with zeros
+  for ( int i=0;i<Nbins;i++ )
+  {
+    rAvg[i] = 0.0;
+    rCount[i] = 0;
+  }
+
+  // Perform radial averaging
+  for ( int x=0;x<dims[0];x++ )
+  for ( int y=0;y<dims[1];y++ )
+  for ( int z=0;z<dims[2];z++ )
+  {
+    double r = sqrt( pow(x-x0,2) + pow(y-y0,2) + pow(z-z0,2) );
+    int bin = (r*(Nbins-1)/rmax);
+    if ( bin < Nbins )
+    {
+      rAvg[bin] += *((double *) PyArray_GETPTR3(npdata,x,y,z) );
+      rCount[bin] += 1;
+    }
+  }
+
+  // Create a numpy array to store the result in
+  npy_intp length = Nbins;
+  PyObject* result = PyArray_ZEROS( 1, &length, NPY_DOUBLE, 0 );
+  double *rawptr = PyArray_DATA(result);
+  Py_INCREF(result);
+  // Divide by count
+  for ( int i=0;i<Nbins;i++ )
+  {
+    rawptr[i] = rAvg[i]/rCount[i];
+  }
+
+  return result;
+}
+
 static PyMethodDef categorizeMethods[] = {
-  {"categorize", categorize, METH_VARARGS, "Cluster data based on the closest mean"},
+  {"categorize", categorize, METH_VARARGS, "Cluster data based on the closest mean. Arguments: Segmentor object"},
+  {"radialMean", radialMean, METH_VARARGS, "Perform radial averaging on a 3D array. Arguments: 3D numpy array with data, number of bins"},
   {NULL,NULL,0,NULL}
 };
 

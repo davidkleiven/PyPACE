@@ -4,12 +4,15 @@ mpl.rcParams["svg.fonttype"] = "none"
 mpl.rcParams["axes.unicode_minus"] = False
 from matplotlib import pyplot as plt
 import segmentor as seg
+import qWeighting as qw
+
 
 class DensityCorrector(object):
     def __init__( self, reconstructedFname, kspaceFname ):
         self.reconstructed = np.load( reconstructedFname ).astype(np.float64)
         self.kspace = np.load( kspaceFname )
         self.segmentor = seg.Segmentor(self.reconstructed)
+        self.qweight = qw.Qweight( self.kspace )
 
     def plotRec( self, show=False, cmap="inferno" ):
         """
