@@ -9,6 +9,9 @@ class ProjectionPropagator(object):
         self.voxelsize = voxelsize
         self.kspaceDim=kspaceDim
 
+    def yAxisIsMainAxis( self, angle ):
+        return angle < 45 or angle > 135
+
     def generateKspace( self, angleStepDeg ):
         angles = np.linspace( 0, 45, int( 45/angleStepDeg ) )
         angles *= np.pi/180.0
@@ -23,27 +26,42 @@ class ProjectionPropagator(object):
             proj1 = self.delta.sum(axis=2)*self.voxelsize
             ff1 = np.abs( np.fft.fft2( np.exp(1j*k*proj1)-1.0, s=(self.kspaceDim,self.kspaceDim) ) )**2
             ff1 = np.fft.fftshift(ff1)
-            for iy in range( int(self.kspaceDim/2) ):
-                zmin = int( -iy*np.sin(angles[i+1]) )
-                zmax = int( -iy*np.sin(angles[i]) )
-                for iz in range(zmin,zmax):
-                    weight = (iz-zmin)/(zmax-zmin)
-                    zIndx = int( self.kspaceDim/2+iz )
-                    yIndx = int( self.kspaceDim/2+iy)
-                    indx = int( np.sqrt( iz**2 + iy**2) + self.kspaceDim/2 )
+            for imain in range( int(self.kspaceDim/2) ):
+                if ( self.yAxisIsMainAxis(angles[i]) ):
+                    secondmin = int( -imain*np.sin(angles[i+1]) )
+                    secondmax = int( -imain*np.sin(angles[i]) )
+                else:
+                    secondmin = int( -imain*np.sin(np.pi/2.0-angles[i]) )
+                    secondmax = int( -imain*np.sin(np.pi/2.0-angles[i+1]) )
+
+                for isecond in range(secondmin,secondmax):
+                    weight = (isecond-secondmin)/(secondmax-secondmin)
+                    secondIndx = int( self.kspaceDim/2+isecond )
+                    mainIndx = int( self.kspaceDim/2+imain)
+                    indx = int( np.sqrt( isecond**2 + imain**2) + self.kspaceDim/2 )
                     if ( indx >= 512 ):
                         break
-                    kspace[:,yIndx,zIndx] = ff1[:,indx]*weight + (1.0-weight)*ff0[:,indx]
-                zmin = int( iy*np.sin(angles[i]) )
-                zmax = int( iy*np.sin(angles[i+1]))
+                    if ( self.yAxisIsMainAxis(angles[i]) ):
+                        kspace[:,mainIndx,secondIndx] = ff1[:,indx]*weight + (1.0-weight)*ff0[:,indx]
+                    else:
+                        kspace[:,secondIndx,mainIndx] = ff1[:,indx]*weight + (1.0-weight)*ff0[:,indx]
+                if ( self.yAxisIsMainAxis(angles[i]) ):
+                    secondmin = int( imain*np.sin(angles[i]) )
+                    secondmax = int( imain*np.sin(angles[i+1]))
+                else:
+                    secondmin = int( imain*np.sin(np.pi/2.0-angles[i+1]) )
+                    secondmax = int( imain*np.sin(np.pi/2.0-angles[i]))
 
-                for iz in range(zmin,zmax):
-                    weight = (iz-zmin)/(zmax-zmin)
-                    zIndx = int( self.kspaceDim/2+iz )
-                    yIndx = int( self.kspaceDim/2-iy)
-                    indx = int( self.kspaceDim/2 - np.sqrt( iz**2 + iy**2) )
+                for isecond in range(secondmin,secondmax):
+                    weight = (isecond-secondmin)/(secondmax-secondmin)
+                    secondIndx = int( self.kspaceDim/2+isecond )
+                    mainIndx = int( self.kspaceDim/2-imain)
+                    indx = int( self.kspaceDim/2 - np.sqrt( isecond**2 + imain**2) )
                     if ( indx < 0 ):
                         break
-                    kspace[:,yIndx,zIndx] = ff1[:,indx]*weight + (1.0-weight)*ff0[:,indx]
+                    if ( self.yAxisIsMainAxis(angles[i]) ):
+                        kspace[:,mainIndx,secondIndx] = ff1[:,indx]*weight + (1.0-weight)*ff0[:,indx]
+                    else:
+                        kspace[:,secondIndx,mainIndx] = ff1[:,indx]*weight + (1.0-weight)*ff0[:,indx]
             ff0[:,:] = ff1[:,:]
         return kspace
