@@ -3,11 +3,13 @@ import matplotlib as mpl
 mpl.rcParams["svg.fonttype"] = "none"
 mpl.rcParams["axes.unicode_minus"] = False
 from matplotlib import pyplot as plt
+import segmentor as seg
 
 class DensityCorrector(object):
     def __init__( self, reconstructedFname, kspaceFname ):
-        self.reconstructed = np.load( reconstructedFname )
+        self.reconstructed = np.load( reconstructedFname ).astype(np.float64)
         self.kspace = np.load( kspaceFname )
+        self.segmentor = seg.Segmentor(self.reconstructed)
 
     def plotRec( self, show=False, cmap="inferno" ):
         """
@@ -62,3 +64,30 @@ class DensityCorrector(object):
         ax3.imshow( self.kspace[centerX,:,:], cmap=cmap, norm=mpl.colors.LogNorm() )
         ax3.set_title("$k_yk_z$-plane")
         return fig, [ax1,ax2,ax3]
+
+    def segment( self, Nclusters, maxIter=1000 ):
+        """
+        Segments the image into Nclusters
+        """
+        self.segmentor.kmeans( Nclusters, maxIter=maxIter )
+
+    def plotClusters( self, cluster, cmap="bone" ):
+        """
+        Plots individual clusters given by the cluster array
+        Example:
+        this.plotClusters(0)
+        """
+        fig = plt.figure()
+        ax = []
+        data = self.segmentor.getSingleCluster( cluster )
+        centerX = int(data.shape[0]/2)
+        centerY = int(data.shape[1]/2)
+        centerZ = int(data.shape[2]/2)
+        ax.append( fig.add_subplot(1,3,len(ax)+1))
+        ax[-1].imshow(data[:,:,centerZ], cmap=cmap)
+        ax.append( fig.add_subplot(1,3,len(ax)+1))
+        ax[-1].imshow(data[:,centerY,:], cmap=cmap)
+        ax.append( fig.add_subplot(1,3,len(ax)+1))
+        ax[-1].imshow(data[centerX,:,:], cmap=cmap)
+        fig.suptitle("Cluser %d"%(cluster))
+        return fig, ax

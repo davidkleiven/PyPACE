@@ -10,6 +10,12 @@ def main():
 
     dCorr = dc.DensityCorrector( reconstruct, kspace )
     dCorr.plotRec()
+    dCorr.segment( 6 )
+    #dCorr.segmentor.replaceDataWithMeans()
+    dCorr.plotClusters(0)
+    dCorr.plotClusters(1)
+    dCorr.plotClusters(2)
+    dCorr.plotClusters(3)
     dCorr.plotKspace()
     plt.show()
 
