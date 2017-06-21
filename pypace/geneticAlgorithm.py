@@ -103,7 +103,7 @@ class GeneticAlgorithm(object):
         Evolves the GA by one generation
         """
         self.computeFitness()
-        if ( self.comm.Get_Rank() == 0 ):
+        if ( self.comm.Get_rank() == 0 ):
             print ("Best fitness: %.2E"%(np.max(self.fitness)))
             print ("Worst fitness: %.2E"%(np.min(self.fitness)))
             self.bestIndividuals[self.currentGeneration,:] = self.getBestIndividual()
@@ -117,3 +117,9 @@ class GeneticAlgorithm(object):
         """
         for i in range(self.nGenerations):
             self.evolveOneGeneration()
+
+        # Save the best states
+        if ( self.comm.Get_rank() == 0 ):
+            fname = "bestIdividuals.csv"
+            np.savetxt( fname , self.bestIdividuals, delimiter="," )
+            print ("Best individual in each generation written to %s"%(fname))
