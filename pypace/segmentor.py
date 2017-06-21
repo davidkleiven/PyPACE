@@ -21,7 +21,7 @@ class Segmentor(object):
         for i in range(maxIter):
             converged = catg.categorize( self )
             if ( converged ):
-                if ( comm is None ):
+                if ( self.comm is None ):
                     print ("K-means converged in %d iterations"%(i+1))
                 else:
                     if ( self.comm.Get_rank() == 0 ):
