@@ -13,5 +13,9 @@ def main():
     if ( rank == 0 ):
         print ( dest )
 
+    # Try to broadcast the array of the root
+    array = comm.bcast( array, root=0 )
+    print ("Rank %d"%(comm.Get_rank()), array )
+
 if __name__ == "__main__":
     main()
