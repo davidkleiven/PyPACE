@@ -20,8 +20,10 @@ class MatrixBuilder3D:
         assert( slice1.shape[1] == self.dim )
         assert( slice2.shape[0] == self.dim )
         assert( slice2.shape[1] == self.dim )
-        if ( angleDeg < 45 ):
+        if ( angleDeg <= 45 ):
             self.insert0to45( slice1, slice2, angleDeg, stepAngleDeg )
+        elif ( angleDeg <= 90 ):
+            self.insert45to90( slice1, slice2, angleDeg, stepAngleDeg )
 
     def insert0to45( self, slice1, slice2, angleDeg, stepAngleDeg ):
         alpha = angleDeg*np.pi/180.0
@@ -42,6 +44,26 @@ class MatrixBuilder3D:
                     zIndx = int( self.dim/2-iz )
                     self.data[:,yIndx,zIndx] = slice1[:,radialIndx]*(1.0-weight) + slice2[:,radialIndx]*weight
 
+    def insert45to90( self, slice1, slice2, angleDeg, stepAngleDeg ):
+        alpha = angleDeg*np.pi/180.0
+        dalpha = stepAngleDeg*np.pi/180.0
+        beta = np.pi/2.0-alpha-dalpha
+        for iz in range(0,int(self.dim/2)):
+            ymin = int(iz*np.tan(beta))
+            ymax = int(iz*np.tan(beta+dalpha))+1
+            for iy in range(ymin,ymax):
+                weight = (iy-ymin)/(ymax-ymin)
+                radialIndx = int( self.dim/2 + np.sqrt(iy**2+iz**2))
+                if ( radialIndx < self.dim ):
+                    yIndx = int( self.dim/2 + iy )
+                    zIndx = int( self.dim/2 + iz )
+                    self.data[:,yIndx,zIndx] = slice2[:,radialIndx]*(1.0-weight) + slice1[:,radialIndx]*weight
+                radialIndx = int( self.dim/2 - np.sqrt(iy**2+iz**2) )
+                if ( radialIndx >= 0 ):
+                    yIndx = int( self.dim/2-iy )
+                    zIndx = int( self.dim/2-iz )
+                    self.data[:,yIndx,zIndx] = slice2[:,radialIndx]*(1.0-weight) + slice1[:,radialIndx]*weight
+
     def plot( self ):
         centerX = int(self.dim/2)
         plt.imshow( self.data[centerX,:,:], cmap="nipy_spectral", norm=mpl.colors.LogNorm(), interpolation="none")
@@ -60,7 +82,7 @@ class ProjectionPropagator(object):
         return angle < np.pi/4.0 or angle > 3.0*np.pi/4.0
 
     def generateKspace( self, angleStepDeg ):
-        angles = np.linspace( 0, 45, int( 45/angleStepDeg )+1 )
+        angles = np.linspace( 0, 90, int( 90/angleStepDeg )+1 )
         angleStepDeg = angles[1]-angles[0]
         #angles *= np.pi/180.0
 
