@@ -24,6 +24,12 @@ class MatrixBuilder3D:
             self.insert0to45( slice1, slice2, angleDeg, stepAngleDeg )
         elif ( angleDeg <= 90 ):
             self.insert45to90( slice1, slice2, angleDeg, stepAngleDeg )
+        elif ( angleDeg <= 135 ):
+            self.insert90to135( slice1, slice2, angleDeg, stepAngleDeg )
+        elif ( angleDeg <= 180 ):
+            self.insert135to180( slice1, slice2, angleDeg, stepAngleDeg )
+        else:
+            print ("Specify an angle between 0 and 180")
 
     def insert0to45( self, slice1, slice2, angleDeg, stepAngleDeg ):
         alpha = angleDeg*np.pi/180.0
@@ -64,6 +70,46 @@ class MatrixBuilder3D:
                     zIndx = int( self.dim/2-iz )
                     self.data[:,yIndx,zIndx] = slice2[:,radialIndx]*(1.0-weight) + slice1[:,radialIndx]*weight
 
+    def insert90to135( self, slice1, slice2, angleDeg, stepAngleDeg ):
+        alpha = angleDeg*np.pi/180.0
+        dalpha = stepAngleDeg*np.pi/180.0
+        beta = alpha-np.pi/2.0
+        for iz in range(0,int(self.dim/2)):
+            ymax = int( -iz*np.tan(beta) )
+            ymin = int( -iz*np.tan(beta+dalpha) )
+            for iy in range(ymin,ymax):
+                weight = (iy-ymin)/(ymax-ymin)
+                radialIndx = int( self.dim/2 + np.sqrt(iy**2+iz**2))
+                if ( radialIndx < self.dim ):
+                    yIndx = int( self.dim/2 + iy )
+                    zIndx = int( self.dim/2 + iz )
+                    self.data[:,yIndx,zIndx] = slice2[:,radialIndx]*(1.0-weight) + slice1[:,radialIndx]*weight
+                radialIndx = int( self.dim/2 - np.sqrt(iy**2+iz**2) )
+                if ( radialIndx >= 0 ):
+                    yIndx = int( self.dim/2-iy )
+                    zIndx = int( self.dim/2-iz )
+                    self.data[:,yIndx,zIndx] = slice2[:,radialIndx]*(1.0-weight) + slice1[:,radialIndx]*weight
+
+    def insert135to180( self, slice1, slice2, angleDeg, stepAngleDeg ):
+        alpha = angleDeg*np.pi/180.0
+        dalpha = stepAngleDeg*np.pi/180.0
+        beta = np.pi-alpha
+        for iy in range(0,int(self.dim/2)):
+            zmin = int(iy*np.tan(beta-dalpha))
+            zmax = int(iy*np.tan(beta))+1
+            for iz in range(zmin,zmax):
+                weight = (iz-zmin)/(zmax-zmin)
+                radialIndx = int( self.dim/2 + np.sqrt(iy**2+iz**2))
+                if ( radialIndx < self.dim ):
+                    yIndx = int( self.dim/2 - iy )
+                    zIndx = int( self.dim/2 + iz )
+                    self.data[:,yIndx,zIndx] = slice2[:,radialIndx]*(1.0-weight) + slice1[:,radialIndx]*weight
+                radialIndx = int( self.dim/2 - np.sqrt(iy**2+iz**2) )
+                if ( radialIndx >= 0 ):
+                    yIndx = int( self.dim/2+iy )
+                    zIndx = int( self.dim/2-iz )
+                    self.data[:,yIndx,zIndx] = slice2[:,radialIndx]*(1.0-weight) + slice1[:,radialIndx]*weight
+
     def plot( self ):
         centerX = int(self.dim/2)
         plt.imshow( self.data[centerX,:,:], cmap="nipy_spectral", norm=mpl.colors.LogNorm(), interpolation="none")
@@ -82,7 +128,7 @@ class ProjectionPropagator(object):
         return angle < np.pi/4.0 or angle > 3.0*np.pi/4.0
 
     def generateKspace( self, angleStepDeg ):
-        angles = np.linspace( 0, 90, int( 90/angleStepDeg )+1 )
+        angles = np.linspace( 0, 180, int( 180/angleStepDeg )+1 )
         angleStepDeg = angles[1]-angles[0]
         #angles *= np.pi/180.0
 
