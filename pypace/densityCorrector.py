@@ -13,11 +13,11 @@ import geneticAlgorithm as ga
 
 
 class DensityCorrector(object):
-    def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None ):
+    def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None, debug=False ):
         self.reconstructed = np.load( reconstructedFname ).astype(np.float64)
         self.kspace = np.load( kspaceFname )
         self.kspaceIntegral = self.kspace.sum()
-        self.segmentor = seg.Segmentor(self.reconstructed)
+        self.segmentor = seg.Segmentor(self.reconstructed, comm)
         self.qweight = qw.Qweight( self.kspace )
         self.projector = pa.ProjectionPropagator( self.reconstructed, wavelength, voxelsize )
         self.newKspace = None
@@ -25,6 +25,7 @@ class DensityCorrector(object):
         self.hasOptimizedRotation = False
         self.comm = comm
         self.ga = None
+        self.debug = debug
 
     def plotRec( self, show=False, cmap="inferno" ):
         """
@@ -165,5 +166,5 @@ class DensityCorrector(object):
 
     def fit( self, nClusters, angleStepKspace=10.0, maxDelta=1E-4, nGAgenerations=50 ):
         self.segment( nClusters )
-        self.ga = ga.GeneticAlgorithm( self, maxDelta, self.comm, nGAgenerations )
+        self.ga = ga.GeneticAlgorithm( self, maxDelta, self.comm, nGAgenerations, debug=self.debug )
         self.ga.run( angleStepKspace )

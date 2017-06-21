@@ -4,7 +4,7 @@ from mpi4py import MPI
 import pickle as pck
 
 class GeneticAlgorithm(object):
-    def __init__( self, densCorr, maxValue, comm, nGenerations ):
+    def __init__( self, densCorr, maxValue, comm, nGenerations, debug=False ):
         if ( not isinstance(densCorr,dc.DensityCorrector) ):
             raise TypeError("Genetic Algorithm requires a DensityCorrector object")
         self.dc = densCorr
@@ -22,6 +22,7 @@ class GeneticAlgorithm(object):
         self.comm = comm
         self.bestIndividuals = np.zeros((self.nGenerations,self.nGenes))
         self.currentGeneration = 0
+        self.debug = debug
 
     def computeFitness( self, angleStepDeg ):
         """
@@ -31,9 +32,11 @@ class GeneticAlgorithm(object):
         self.population = self.comm.bcast( self.population, root=0 )
         self.fitness = np.zeros(len(self.fitness))
         nPopPerProc = int(self.nPopulations/self.comm.size)
-        start = self.comm.Get_rank()
+        start = self.comm.Get_rank()*nPopPerProc
         end = self.comm.Get_rank()+nPopPerProc
         for i in range(start,end):
+            if ( self.debug ):
+                print ("Rank %d: Computing fitness factor for individual %d"%(self.comm.Get_rank(),i))
             # Insert the means in to the clusters
             self.dc.segmentor.means = self.population[i,:]
             self.dc.segmentor.replaceDataWithMeans()
