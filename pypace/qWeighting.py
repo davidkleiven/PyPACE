@@ -9,6 +9,14 @@ class Qweight(object):
         self.data = kspaceData
         self.interscept = 1.0
         self.slope = 0.0
+        self.weightsAreComputed = False
+
+    def weightData( self, data ):
+        if ( not self.weightsAreComputed ):
+            raise RuntimeError("Power law fit has not been performed")
+        if ( len(self.data.shape) != 3 ):
+            raise TypeError("The data array passed has to have 3 dimensions")
+        return catg.performQWeighting( data, np.exp(self.interscept), self.slope )
 
     def compute( self, showPlot=False ):
         # Perform a radial average
@@ -26,6 +34,7 @@ class Qweight(object):
 
         self.slope, self.interscept, rvalue, pvalue, stderr = stats.linregress( np.log(rbins), np.log(radialMean) )
         print (self.slope, self.interscept)
+        self.weightsAreComputed = True
 
         if ( showPlot ):
             fig = plt.figure()
