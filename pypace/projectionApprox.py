@@ -171,7 +171,7 @@ class ProjectionPropagator(object):
         rotDir = 1
         baseIter = 0
         for i in range( 0, len(angles)-1 ):
-            print (angles[i],angles[i+1])
+            #print (angles[i],angles[i+1])
 
             # Rotate the material around the x-axis
             self.delta = sciinterp.rotate(self.deltaBackup, angles[i+1], axes=(1,0), reshape=False )
