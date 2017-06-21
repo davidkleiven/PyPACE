@@ -11,7 +11,7 @@ def main( argv ):
     kspace = "data/NiAu_sample1_3D.npy"
 
     if ( len(argv) != 1 ):
-        print ("Usage: python ugelStadSphere.py --exploreData")
+        print ("Usage: python ugelStadSphere.py [--exploreData,--fit]")
         return
     comm = MPI.COMM_WORLD
     dCorr = dc.DensityCorrector( reconstruct, kspace, 0.17, 55.2, comm=comm )
@@ -23,10 +23,10 @@ def main( argv ):
             dCorr.buildKspace( 10.0 )
             dCorr.plotKspace( dCorr.newKspace )
             plt.show()
-        else:
+        elif ( arg.find("--fit") != -1 ):
             dCorr.fit( 6 )
 
-    comm.disconnect()
+    comm.Disconnect()
 
 if __name__ == "__main__":
     main( sys.argv[1:] )

@@ -179,7 +179,7 @@ static PyObject* radialMean( PyObject* self, PyObject *args )
 
   if ( !PyArg_ParseTuple( args, "Oi", &data, &Nbins ) )
   {
-    PyErr_SetString( PyExc_TypeError, "Wrong argument types in fucntion radialMean" );
+    PyErr_SetString( PyExc_TypeError, "Wrong argument types in function radialMean" );
     return NULL;
   }
 
@@ -290,7 +290,7 @@ static PyObject* performQWeighting( PyObject* self, PyObject *args )
 static PyMethodDef categorizeMethods[] = {
   {"categorize", categorize, METH_VARARGS, "Cluster data based on the closest mean. Arguments: Segmentor object"},
   {"radialMean", radialMean, METH_VARARGS, "Perform radial averaging on a 3D array. Arguments: 3D numpy array with data, number of bins"},
-  {"performQWeighting", radialMean, METH_VARARGS, "Perform Q weighting on a 3D numpy array"},
+  {"performQWeighting", performQWeighting, METH_VARARGS, "Perform Q weighting on a 3D numpy array"},
   {NULL,NULL,0,NULL}
 };
 

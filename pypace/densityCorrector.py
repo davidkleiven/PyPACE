@@ -13,8 +13,7 @@ import geneticAlgorithm as ga
 
 
 class DensityCorrector(object):
-    def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None,
-    nGAgenerations=50, maxDeltaValue=1E-4 ):
+    def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None ):
         self.reconstructed = np.load( reconstructedFname ).astype(np.float64)
         self.kspace = np.load( kspaceFname )
         self.kspaceIntegral = self.kspace.sum()
@@ -25,7 +24,7 @@ class DensityCorrector(object):
         self.optimalRotationAngleDeg = 0
         self.hasOptimizedRotation = False
         self.comm = comm
-        self.ga = ga.GeneticAlgorithm( self, maxDeltaValue, self.comm, nGAgenerations )
+        self.ga = None
 
     def plotRec( self, show=False, cmap="inferno" ):
         """
@@ -129,7 +128,6 @@ class DensityCorrector(object):
         if ( upper >= len(angle) ):
             upper = len(angle)
         for i in range(anglesPerProc*rank, upper):
-            print (angle[i],i)
             meanSquareError[i] = self.getMeanSqError(angle[i])
 
         meanSquareError = np.sqrt(meanSquareError)
@@ -165,6 +163,7 @@ class DensityCorrector(object):
     def costFunction( self ):
         return np.sqrt( np.sum( (self.newKspace[self.mask==1]-self.kspace[self.mask==1])**2 ) )/self.kspace.shape[0]**3
 
-    def fit( self, nClusters ):
+    def fit( self, nClusters, maxDelta=1E-4, nGAgenerations=50 ):
         self.segment( nClusters )
+        self.ga = ga.GeneticAlgorithm( self, maxDeltaValue, self.comm, nGAgenerations )
         self.ga.run()
