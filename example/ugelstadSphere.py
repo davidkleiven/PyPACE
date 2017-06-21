@@ -17,7 +17,7 @@ def main():
     #dCorr.plotClusters(2)
     #dCorr.plotClusters(3)
     dCorr.plotKspace( dCorr.kspace )
-    dCorr.buildKspace( 20.0 )
+    dCorr.buildKspace( 10.0 )
     dCorr.plotKspace( dCorr.newKspace )
     dCorr.qweight.compute(showPlot=True)
     plt.show()
