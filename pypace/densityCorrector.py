@@ -165,5 +165,6 @@ class DensityCorrector(object):
     def costFunction( self ):
         return np.sqrt( np.sum( (self.newKspace[self.mask==1]-self.kspace[self.mask==1])**2 ) )/self.kspace.shape[0]**3
 
-    def fit( self ):
+    def fit( self, nClusters ):
+        self.segment( nClusters )
         self.ga.run()

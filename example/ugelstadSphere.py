@@ -6,25 +6,27 @@ import densityCorrector as dc
 from matplotlib import pyplot as plt
 from mpi4py import MPI
 
-def main():
+def main( argv ):
     reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
     kspace = "data/NiAu_sample1_3D.npy"
 
+    if ( len(argv) != 1 ):
+        print ("Usage: python ugelStadSphere.py --exploreData")
+        return
     comm = MPI.COMM_WORLD
     dCorr = dc.DensityCorrector( reconstruct, kspace, 0.17, 55.2, comm=comm )
-    dCorr.segment( 6 )
+    for arg in argv:
+        if ( arg.find("--exploreData") != -1 ):
+            dCorr.segment( 6 )
+            dCorr.segmentor.replaceDataWithMeans()
+            dCorr.plotKspace( dCorr.kspace )
+            dCorr.buildKspace( 10.0 )
+            dCorr.plotKspace( dCorr.newKspace )
+            plt.show()
+        else:
+            dCorr.fit( 6 )
+
     comm.disconnect()
-    dCorr.plotRec()
-    #dCorr.segmentor.replaceDataWithMeans()
-    #dCorr.plotClusters(0)
-    #dCorr.plotClusters(1)
-    #dCorr.plotClusters(2)
-    #dCorr.plotClusters(3)
-    #dCorr.plotKspace( dCorr.kspace )
-    #dCorr.buildKspace( 10.0 )
-    #dCorr.plotKspace( dCorr.newKspace )
-    #dCorr.qweight.compute(showPlot=True)
-    plt.show()
 
 if __name__ == "__main__":
-    main()
+    main( sys.argv[1:] )
