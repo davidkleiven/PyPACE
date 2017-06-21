@@ -41,7 +41,7 @@ class GeneticAlgorithm(object):
             self.dc.segmentor.means = self.population[i,:]
             self.dc.segmentor.replaceDataWithMeans()
             self.dc.buildKspace( angleStepDeg )
-            fitness[i] = 1.0/self.costFunction()
+            fitness[i] = 1.0/self.dc.costFunction()
 
         # Collect the fitness from the other processes
         rootsFitness = self.fitness[:nPopPerProc]
