@@ -14,7 +14,7 @@ def main( argv ):
         print ("Usage: python ugelStadSphere.py [--exploreData,--fit,--testFit]")
         return
     comm = MPI.COMM_WORLD
-    dCorr = dc.DensityCorrector( reconstruct, kspace, 0.17, 55.2, comm=comm, debug=True )
+    dCorr = dc.DensityCorrector( reconstruct, kspace, 0.17, 55.2, comm=comm, debug=False )
     for arg in argv:
         if ( arg.find("--exploreData") != -1 ):
             dCorr.segment( 6 )
