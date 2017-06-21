@@ -28,7 +28,5 @@ def main( argv ):
         elif ( arg.find("--testFit") != -1 ):
             dCorr.fit( 2, nGAgenerations=1 )
 
-    comm.Disconnect()
-
 if __name__ == "__main__":
     main( sys.argv[1:] )
