@@ -12,9 +12,41 @@ class MatrixBuilder3D:
     one wedge at the time
     """
     def __init__( self, dim ):
+        self.dim = dim
         self.data = np.zeros((dim,dim,dim))
 
-    #def insert( slice1, angle1Deg, slice2, stepAngleDeg ):
+    def insert( self, slice1, slice2, angleDeg, stepAngleDeg ):
+        assert( slice1.shape[0] == self.dim )
+        assert( slice1.shape[1] == self.dim )
+        assert( slice2.shape[0] == self.dim )
+        assert( slice2.shape[1] == self.dim )
+        if ( angleDeg < 45 ):
+            self.insert0to45( slice1, slice2, angleDeg, stepAngleDeg )
+
+    def insert0to45( self, slice1, slice2, angleDeg, stepAngleDeg ):
+        alpha = angleDeg*np.pi/180.0
+        dalpha = stepAngleDeg*np.pi/180.0
+        for iy in range(0,int(self.dim/2)):
+            zmin = int(iy*np.tan(alpha))
+            zmax = int(iy*np.tan(alpha+dalpha))+1
+            for iz in range(zmin,zmax):
+                weight = (iz-zmin)/(zmax-zmin)
+                radialIndx = int( self.dim/2 + np.sqrt(iy**2+iz**2) )
+                if ( radialIndx < self.dim ):
+                    yIndx = int( self.dim/2 + iy )
+                    zIndx = int( self.dim/2 + iz )
+                    self.data[:,yIndx,zIndx] = slice1[:,radialIndx]*(1.0-weight) + slice2[:,radialIndx]*weight
+                radialIndx = int( self.dim/2 - np.sqrt(iy**2+iz**2) )
+                if ( radialIndx >= 0 ):
+                    yIndx = int( self.dim/2-iy )
+                    zIndx = int( self.dim/2-iz )
+                    self.data[:,yIndx,zIndx] = slice1[:,radialIndx]*(1.0-weight) + slice2[:,radialIndx]*weight
+
+    def plot( self ):
+        centerX = int(self.dim/2)
+        plt.imshow( self.data[centerX,:,:], cmap="nipy_spectral", norm=mpl.colors.LogNorm(), interpolation="none")
+        plt.show()
+
 
 
 class ProjectionPropagator(object):
@@ -27,17 +59,13 @@ class ProjectionPropagator(object):
     def yAxisIsMainAxis( self, angle ):
         return angle < np.pi/4.0 or angle > 3.0*np.pi/4.0
 
-    def plotKspace( self, values ):
-        centerX = int(values.shape[0]/2)
-        plt.imshow( values[centerX,:,:], cmap="nipy_spectral", norm=mpl.colors.LogNorm(), interpolation="none")
-        plt.show()
-
     def generateKspace( self, angleStepDeg ):
-        angles = np.linspace( 0, 180, int( 180/angleStepDeg ) )
-        angles *= np.pi/180.0
+        angles = np.linspace( 0, 45, int( 45/angleStepDeg )+1 )
+        angleStepDeg = angles[1]-angles[0]
+        #angles *= np.pi/180.0
 
         # Initialize the new kspace matrix
-        kspace = np.zeros((self.kspaceDim,self.kspaceDim,self.kspaceDim))
+        kspaceBuilder = MatrixBuilder3D( self.kspaceDim )
 
         # Compute the wavenumber
         k = 2.0*np.pi/self.wavelength
@@ -49,7 +77,7 @@ class ProjectionPropagator(object):
         ff0 = np.abs( np.fft.fft2( np.exp(1j*k*proj0)-1.0, s=(self.kspaceDim,self.kspaceDim) ) )**2
         ff0 = np.fft.fftshift(ff0)
         for i in range( 0, len(angles)-1 ):
-            print (angles[i]*180.0/np.pi,angles[i+1]*180.0/np.pi)
+            print (angles[i],angles[i+1])
 
             # Rotate the material around the x-axis
             self.delta = sciinterp.rotate(self.delta, angleStepDeg, axes=(1,0), reshape=False )
@@ -60,4 +88,7 @@ class ProjectionPropagator(object):
             # Far field is given by the new projection
             ff1 = np.abs( np.fft.fft2( np.exp(1j*k*proj1)-1.0, s=(self.kspaceDim,self.kspaceDim) ) )**2
             ff1 = np.fft.fftshift(ff1)
-        return kspace
+            kspaceBuilder.insert( ff0, ff1, angles[i], angleStepDeg )
+            ff0[:,:] = ff1[:,:]
+            kspaceBuilder.plot()
+        return kspaceBuilder.data
