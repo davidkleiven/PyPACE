@@ -4,6 +4,7 @@ import copy
 from scipy.ndimage import interpolation as sciinterp
 import matplotlib as mpl
 from matplotlib import pyplot as plt
+from mpi4py import MPI
 
 class MatrixBuilder3D:
     """
