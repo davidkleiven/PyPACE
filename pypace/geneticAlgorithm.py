@@ -13,8 +13,8 @@ class GeneticAlgorithm(object):
         # Round this number to be an integer number of the number of processes
         self.nPopulations = int(1+self.nPopulations/comm.size)*comm.size
         self.nGenes = len(self.dc.segmentor.means)
-        self.population = np.random.rand(self.nPopulations,nGenes)*maxValue
-        self.numberGenesOfToMutate = int(self.nGenes*self.nPopulations*0.001)
+        self.population = np.random.rand(self.nPopulations,self.nGenes)*maxValue
+        self.numberOfGenesToMutate = int(self.nGenes*self.nPopulations*0.001)
         self.nGenerations = nGenerations
         if ( self.numberOfGenesToMutate == 0 ):
             self.numberOfGenesToMutate = 1
@@ -23,7 +23,7 @@ class GeneticAlgorithm(object):
         self.bestIndividuals = np.zeros((self.nGenerations,self.nGenes))
         self.currentGeneration = 0
 
-    def computeFitness( self ):
+    def computeFitness( self, angleStepDeg ):
         """
         Compute the fitness factor for all the populations
         """
@@ -37,7 +37,7 @@ class GeneticAlgorithm(object):
             # Insert the means in to the clusters
             self.dc.segmentor.means = self.population[i,:]
             self.dc.segmentor.replaceDataWithMeans()
-            self.dc.buildKspace()
+            self.dc.buildKspace( angleStepDeg )
             fitness[i] = 1.0/self.costFunction()
 
         # Collect the fitness from the other processes
@@ -98,11 +98,11 @@ class GeneticAlgorithm(object):
         indx = np.argmax(self.fitness)
         return self.population[indx,:]
 
-    def evolveOneGeneration( self ):
+    def evolveOneGeneration( self, angleStepKspace ):
         """
         Evolves the GA by one generation
         """
-        self.computeFitness()
+        self.computeFitness( angleStepKspace )
         if ( self.comm.Get_rank() == 0 ):
             print ("Best fitness: %.2E"%(np.max(self.fitness)))
             print ("Worst fitness: %.2E"%(np.min(self.fitness)))
@@ -111,12 +111,14 @@ class GeneticAlgorithm(object):
             self.mutate()
             self.currentGeneration += 1
 
-    def run( self ):
+    def run( self, angleStepKspace ):
         """
         Runs GA for a given number of generations
         """
+        if ( self.comm.Get_rank() == 0 ):
+            print ("Starting the Genetic Algorithm...")
         for i in range(self.nGenerations):
-            self.evolveOneGeneration()
+            self.evolveOneGeneration( angleStepKspace )
 
         # Save the best states
         if ( self.comm.Get_rank() == 0 ):

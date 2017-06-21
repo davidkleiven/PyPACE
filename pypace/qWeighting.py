@@ -33,7 +33,6 @@ class Qweight(object):
         radialMean = radialMean[radialMean > 1E-6*radialMean.max()]
 
         self.slope, self.interscept, rvalue, pvalue, stderr = stats.linregress( np.log(rbins), np.log(radialMean) )
-        print (self.slope, self.interscept)
         self.weightsAreComputed = True
 
         if ( showPlot ):

@@ -163,7 +163,7 @@ class DensityCorrector(object):
     def costFunction( self ):
         return np.sqrt( np.sum( (self.newKspace[self.mask==1]-self.kspace[self.mask==1])**2 ) )/self.kspace.shape[0]**3
 
-    def fit( self, nClusters, maxDelta=1E-4, nGAgenerations=50 ):
+    def fit( self, nClusters, angleStepKspace=10.0, maxDelta=1E-4, nGAgenerations=50 ):
         self.segment( nClusters )
-        self.ga = ga.GeneticAlgorithm( self, maxDeltaValue, self.comm, nGAgenerations )
-        self.ga.run()
+        self.ga = ga.GeneticAlgorithm( self, maxDelta, self.comm, nGAgenerations )
+        self.ga.run( angleStepKspace )
