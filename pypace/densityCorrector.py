@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import matplotlib as mpl
 mpl.rcParams["svg.fonttype"] = "none"
@@ -6,6 +7,8 @@ from matplotlib import pyplot as plt
 import segmentor as seg
 import qWeighting as qw
 import projectionApprox as pa
+from scipy.ndimage import interpolation as sciinterp
+import multiprocessing as mp
 
 
 class DensityCorrector(object):
@@ -16,6 +19,7 @@ class DensityCorrector(object):
         self.qweight = qw.Qweight( self.kspace )
         self.projector = pa.ProjectionPropagator( self.reconstructed, wavelength, voxelsize )
         self.newKspace = None
+        self.optimalRotationAngleDeg = 0
 
     def plotRec( self, show=False, cmap="inferno" ):
         """
@@ -98,5 +102,39 @@ class DensityCorrector(object):
         fig.suptitle("Cluser %d"%(cluster))
         return fig, ax
 
+    def getMask( self ):
+        mask = np.zeros(self.kspace.shape, dtype=np.uint8 )
+        mask[self.kspace > 10.0*self.kspace.min()] = 1
+        return mask
+
+    def getMeanSqError( self, angle ):
+        rotated = sciinterp.rotate( self.newKspace, angle[i], axes=(1,0), reshape=False)
+        return np.sum( (rotated-self.kspace)**2 )
+
+    def optimizeRotation( self, parallel=True ):
+        angle = np.linspace(0,180,24)
+        meanSquareError = np.zeros(len(angle))
+        if ( parallel ):
+            workers = mp.Pool( mp.cpu_count() )
+            meanSquareError = workers.map( self.getMeanSqError, angle )
+        else:
+            for i in range(len(angle)):
+                meanSquareError[i] = self.getMeanSqError(angle[i])
+
+        meanSquareError = np.sqrt(meanSquareError)
+        meanSquareError /= (self.kspaceDim**3)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(1,1,1)
+        ax.plot(angle,meanSquareError, color="black")
+        ax.set_xlabel("Angle (deg)")
+        ax.set_ylabel("Mean square error")
+        self.optimalRotationAngleDeg = angle[np.argmin(meanSquareError)]
+
+
     def buildKspace( self, angleStepDeg ):
         self.newKspace = self.projector.generateKspace( angleStepDeg )
+        self.newKspace *= self.kspace.sum()/self.newKspace.sum()
+        self.optimizeRotation()
+        mask = self.getMask()
+        self.newKspace[mask==0] = np.nan

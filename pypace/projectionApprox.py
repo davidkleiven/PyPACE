@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import copy
 from scipy.ndimage import interpolation as sciinterp
@@ -16,6 +17,9 @@ class MatrixBuilder3D:
         self.data = np.zeros((dim,dim,dim))
 
     def insert( self, slice1, slice2, angleDeg, stepAngleDeg ):
+        """
+        Inserts slices into the 3D matrix
+        """
         assert( slice1.shape[0] == self.dim )
         assert( slice1.shape[1] == self.dim )
         assert( slice2.shape[0] == self.dim )
@@ -32,6 +36,9 @@ class MatrixBuilder3D:
             print ("Specify an angle between 0 and 180")
 
     def insert0to45( self, slice1, slice2, angleDeg, stepAngleDeg ):
+        """
+        Insert slices when the angle of rotation alpha satisfy 0 < alpha <= 45
+        """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
         for iy in range(0,int(self.dim/2)):
@@ -51,6 +58,9 @@ class MatrixBuilder3D:
                     self.data[:,yIndx,zIndx] = slice1[:,radialIndx]*(1.0-weight) + slice2[:,radialIndx]*weight
 
     def insert45to90( self, slice1, slice2, angleDeg, stepAngleDeg ):
+        """
+        Insert slices when the angle of rotation alpha satisfy 45 < alpha <= 90
+        """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
         beta = np.pi/2.0-alpha-dalpha
@@ -71,6 +81,9 @@ class MatrixBuilder3D:
                     self.data[:,yIndx,zIndx] = slice2[:,radialIndx]*(1.0-weight) + slice1[:,radialIndx]*weight
 
     def insert90to135( self, slice1, slice2, angleDeg, stepAngleDeg ):
+        """
+        Insert slices when the angle of rotation alpha satisfy 90 < alpha <= 135
+        """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
         beta = alpha-np.pi/2.0
@@ -91,6 +104,9 @@ class MatrixBuilder3D:
                     self.data[:,yIndx,zIndx] = slice2[:,radialIndx]*(1.0-weight) + slice1[:,radialIndx]*weight
 
     def insert135to180( self, slice1, slice2, angleDeg, stepAngleDeg ):
+        """
+        Insert slices when the angle of rotation alpha satisfy135 < alpha <= 180
+        """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
         beta = np.pi-alpha
@@ -111,6 +127,9 @@ class MatrixBuilder3D:
                     self.data[:,yIndx,zIndx] = slice2[:,radialIndx]*(1.0-weight) + slice1[:,radialIndx]*weight
 
     def plot( self ):
+        """
+        Plot a slice in the yz-plane of the 3D data
+        """
         centerX = int(self.dim/2)
         plt.imshow( self.data[centerX,:,:], cmap="nipy_spectral", norm=mpl.colors.LogNorm(), interpolation="none")
         plt.show()
@@ -125,10 +144,10 @@ class ProjectionPropagator(object):
         self.voxelsize = voxelsize
         self.kspaceDim=kspaceDim
 
-    def yAxisIsMainAxis( self, angle ):
-        return angle < np.pi/4.0 or angle > 3.0*np.pi/4.0
-
     def getFarField( self ):
+        """
+        Computes the far field scattering pattern based on the projection approxmiation
+        """
         k = 2.0*np.pi/self.wavelength
         proj0 = self.delta.sum(axis=2)*self.voxelsize
         ff0 = np.abs( np.fft.fft2( np.exp(1j*k*proj0)-1.0, s=(self.kspaceDim,self.kspaceDim) ) )**2
@@ -136,6 +155,9 @@ class ProjectionPropagator(object):
         return ff0
 
     def generateKspace( self, angleStepDeg ):
+        """
+        Generates full 3D kspace representation from the projection approximation
+        """
         angles = np.linspace( 0, 180, int( 180/angleStepDeg )+1 )
         angleStepDeg = angles[1]-angles[0]
         #angles *= np.pi/180.0
@@ -156,5 +178,5 @@ class ProjectionPropagator(object):
             ff1 = self.getFarField()
             kspaceBuilder.insert( ff0, ff1, angles[i], angleStepDeg )
             ff0[:,:] = ff1[:,:]
-            kspaceBuilder.plot()
+            #kspaceBuilder.plot()
         return kspaceBuilder.data
