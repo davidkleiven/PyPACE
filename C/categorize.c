@@ -294,17 +294,26 @@ static PyMethodDef categorizeMethods[] = {
   {NULL,NULL,0,NULL}
 };
 
-static struct PyModuleDef categorizeModule = {
-  PyModuleDef_HEAD_INIT,
-  "categorize",
-  NULL, // TODO: Write documentation string here
-  -1,
-  categorizeMethods
-};
+#if PY_MAJOR_VERSION >= 3
+  static struct PyModuleDef categorizeModule = {
+    PyModuleDef_HEAD_INIT,
+    "categorize",
+    NULL, // TODO: Write documentation string here
+    -1,
+    categorizeMethods
+  };
+#endif
 
 PyMODINIT_FUNC PyInit_categorize(void)
 {
-  PyObject* module = PyModule_Create( &categorizeModule );
+  #if PY_MAJOR_VERSION >= 3
+    PyObject* module = PyModule_Create( &categorizeModule );
+  #else
+    Py_InitModule3( "categorize", categorizeMethods, "This the Python 2 version" );
+  #endif
   import_array();
-  return module;
+
+  #if PY_MAJOR_VERSION >= 3
+    return module;
+  #endif
 }
