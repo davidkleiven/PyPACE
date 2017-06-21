@@ -41,7 +41,7 @@ class GeneticAlgorithm(object):
             self.dc.segmentor.means = self.population[i,:]
             self.dc.segmentor.replaceDataWithMeans()
             self.dc.buildKspace( angleStepDeg )
-            fitness[i] = 1.0/self.dc.costFunction()
+            self.fitness[i] = 1.0/self.dc.costFunction()
 
         # Collect the fitness from the other processes
         rootsFitness = self.fitness[:nPopPerProc]
@@ -113,6 +113,9 @@ class GeneticAlgorithm(object):
             self.reproduce()
             self.mutate()
             self.currentGeneration += 1
+            fname = "bestIdividuals.csv"
+            np.savetxt( fname , self.bestIdividuals[:], delimiter="," )
+            print ("Best individual in each generation written to %s"%(fname))
 
     def run( self, angleStepKspace ):
         """
@@ -122,9 +125,3 @@ class GeneticAlgorithm(object):
             print ("Starting the Genetic Algorithm...")
         for i in range(self.nGenerations):
             self.evolveOneGeneration( angleStepKspace )
-
-        # Save the best states
-        if ( self.comm.Get_rank() == 0 ):
-            fname = "bestIdividuals.csv"
-            np.savetxt( fname , self.bestIdividuals, delimiter="," )
-            print ("Best individual in each generation written to %s"%(fname))
