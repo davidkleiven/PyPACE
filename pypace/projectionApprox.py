@@ -120,12 +120,20 @@ class MatrixBuilder3D:
 class ProjectionPropagator(object):
     def __init__( self, deltaDistribution, wavelength, voxelsize, kspaceDim=512, maxDeltaValue=5E-5 ):
         self.delta = deltaDistribution*maxDeltaValue/deltaDistribution.max()
+        self.deltaBackup = copy.deepcopy(self.delta)
         self.wavelength = wavelength
         self.voxelsize = voxelsize
         self.kspaceDim=kspaceDim
 
     def yAxisIsMainAxis( self, angle ):
         return angle < np.pi/4.0 or angle > 3.0*np.pi/4.0
+
+    def getFarField( self ):
+        k = 2.0*np.pi/self.wavelength
+        proj0 = self.delta.sum(axis=2)*self.voxelsize
+        ff0 = np.abs( np.fft.fft2( np.exp(1j*k*proj0)-1.0, s=(self.kspaceDim,self.kspaceDim) ) )**2
+        ff0 = np.fft.fftshift(ff0)
+        return ff0
 
     def generateKspace( self, angleStepDeg ):
         angles = np.linspace( 0, 180, int( 180/angleStepDeg )+1 )
@@ -135,27 +143,17 @@ class ProjectionPropagator(object):
         # Initialize the new kspace matrix
         kspaceBuilder = MatrixBuilder3D( self.kspaceDim )
 
-        # Compute the wavenumber
-        k = 2.0*np.pi/self.wavelength
-
-        # Compue the projection along the propagation direction
-        proj0 = self.delta.sum(axis=2)*self.voxelsize
-
-        # The far field is given by the Fourier Transform of the exit field
-        ff0 = np.abs( np.fft.fft2( np.exp(1j*k*proj0)-1.0, s=(self.kspaceDim,self.kspaceDim) ) )**2
-        ff0 = np.fft.fftshift(ff0)
+        ff0 = self.getFarField()
+        baseAngle = 0
+        rotDir = 1
+        baseIter = 0
         for i in range( 0, len(angles)-1 ):
             print (angles[i],angles[i+1])
 
             # Rotate the material around the x-axis
-            self.delta = sciinterp.rotate(self.delta, angleStepDeg, axes=(1,0), reshape=False )
+            self.delta = sciinterp.rotate(self.deltaBackup, angles[i+1], axes=(1,0), reshape=False )
 
-            # Compute the new projection
-            proj1 = self.delta.sum(axis=2)*self.voxelsize
-
-            # Far field is given by the new projection
-            ff1 = np.abs( np.fft.fft2( np.exp(1j*k*proj1)-1.0, s=(self.kspaceDim,self.kspaceDim) ) )**2
-            ff1 = np.fft.fftshift(ff1)
+            ff1 = self.getFarField()
             kspaceBuilder.insert( ff0, ff1, angles[i], angleStepDeg )
             ff0[:,:] = ff1[:,:]
             kspaceBuilder.plot()
