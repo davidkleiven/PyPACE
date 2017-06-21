@@ -33,7 +33,7 @@ class GeneticAlgorithm(object):
         self.fitness = np.zeros(len(self.fitness))
         nPopPerProc = int(self.nPopulations/self.comm.size)
         start = self.comm.Get_rank()*nPopPerProc
-        end = self.comm.Get_rank()+nPopPerProc
+        end = self.comm.Get_rank()*nPopPerProc+nPopPerProc
         for i in range(start,end):
             if ( self.debug ):
                 print ("Rank %d: Computing fitness factor for individual %d"%(self.comm.Get_rank(),i))
