@@ -45,7 +45,10 @@ class GeneticAlgorithm(object):
 
         # Collect the fitness from the other processes
         rootsFitness = self.fitness[:nPopPerProc]
-        self.fitness = self.comm.Reduce( [self.fitness,MPI.DOUBLE], root=0 )
+        if ( self.comm.Get_rank() == 0 ):
+            self.comm.Reduce( None, [self.fitness,MPI.DOUBLE], op=MPI.SUM, root=0 )
+        else:
+            self.comm.Reduce( [self.fitness,MPI.DOUBLE], None, op=MPI.SUM, root=0 )
 
     def getParents( self ):
         """
