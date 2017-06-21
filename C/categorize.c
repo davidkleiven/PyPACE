@@ -304,16 +304,17 @@ static PyMethodDef categorizeMethods[] = {
   };
 #endif
 
-PyMODINIT_FUNC PyInit_categorize(void)
-{
-  #if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3
+  PyMODINIT_FUNC PyInit_categorize(void)
+  {
     PyObject* module = PyModule_Create( &categorizeModule );
-  #else
-    Py_InitModule3( "categorize", categorizeMethods, "This the Python 2 version" );
-  #endif
-  import_array();
-
-  #if PY_MAJOR_VERSION >= 3
+    import_array();
     return module;
-  #endif
-}
+  }
+#else
+  PyMODINIT_FUNC initcategorize(void)
+  {
+    Py_InitModule3( "categorize", categorizeMethods, "This the Python 2 version" );
+    import_array();
+  }
+#endif
