@@ -2,6 +2,7 @@ import numpy as np
 import densityCorrector as dc
 from mpi4py import MPI
 import pickle as pck
+import copy
 
 class GeneticAlgorithm(object):
     def __init__( self, densCorr, maxValue, comm, nGenerations, debug=False ):
@@ -44,8 +45,9 @@ class GeneticAlgorithm(object):
             self.fitness[i] = 1.0/self.dc.costFunction()
 
         # Collect the fitness from the other processes
-        rootsFitness = self.fitness[:nPopPerProc]
-        self.comm.Reduce( self.fitness, self.fitness, op=MPI.SUM, root=0 )
+        dest = np.zeros(self.fitness.shape)
+        self.comm.Reduce( self.fitness, dest, op=MPI.SUM, root=0 )
+        self.fitness = dest
 
     def getParents( self ):
         """
