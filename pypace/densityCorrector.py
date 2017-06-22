@@ -10,6 +10,7 @@ import projectionApprox as pa
 from scipy.ndimage import interpolation as sciinterp
 import multiprocessing as mp
 import geneticAlgorithm as ga
+from mpi4py import MPI
 
 
 class DensityCorrector(object):
@@ -26,6 +27,7 @@ class DensityCorrector(object):
         self.comm = comm
         self.ga = None
         self.debug = debug
+        self.mask = np.zeros(self.kspace.shape, dtype=np.uint8 )
 
     def plotRec( self, show=False, cmap="inferno" ):
         """
@@ -109,14 +111,30 @@ class DensityCorrector(object):
         return fig, ax
 
     def computeMask( self ):
+        """
+        Computes a mask where all the points that are not measured in the
+        experimental dataset is set to 0 and all points that are included
+        are set to 1
+        """
         self.mask = np.zeros(self.kspace.shape, dtype=np.uint8 )
         self.mask[self.kspace > 10.0*self.kspace.min()] = 1
 
     def getMeanSqError( self, angle ):
-        rotated = sciinterp.rotate( self.newKspace[::4,::4,::4], angle, axes=(1,0), reshape=False)
-        return np.sum( (rotated-self.kspace[::4,::4,::4])**2 )
+        """
+        Returnes the mean square error between the simulated and the measured dataset
+        This function is only used to se if the simulated pattern is rotated with respect to the measured.
+        It is not used in the fitting procedure and thus a very accurate mean square error is not needed
+        Hence, all the arrays are downsampled by a factor 4 to speed up the determination of the
+        overall rotation angle
+        """
+        ds = 4
+        rotated = sciinterp.rotate( self.newKspace[::ds,::ds,::ds], angle, axes=(1,0), reshape=False)
+        return np.sum( (rotated-self.kspace[::ds,::ds,::ds])**2 )
 
     def optimizeRotation( self, nangles=24 ):
+        """
+        Computes the rotation angle between the measured and the simulated scattering pattern
+        """
         angle = np.linspace(0,180,nangles)
         meanSquareError = np.zeros(len(angle))
         if ( self.comm is None ):
@@ -131,6 +149,11 @@ class DensityCorrector(object):
         for i in range(anglesPerProc*rank, upper):
             meanSquareError[i] = self.getMeanSqError(angle[i])
 
+        if ( not self.comm is None ):
+            dest = np.zeros(len(meanSquareError))
+            self.comm.Reduce( meanSquareError, dest, op=MPI.SUM, root=0 )
+            if ( self.comm.Get_rank() == 0 ):
+                meanSquareError = dest
         meanSquareError = np.sqrt(meanSquareError)
         meanSquareError /= (self.kspace.shape[0]**3)
 
@@ -162,9 +185,16 @@ class DensityCorrector(object):
         self.newKspace[self.mask==0] = np.nan
 
     def costFunction( self ):
+        """
+        Return the mean square error between the simulated and the measured scattering mattern
+        All points that are not included in the experimental dataset are masked out
+        """
         return np.sqrt( np.sum( (self.newKspace[self.mask==1]-self.kspace[self.mask==1])**2 ) )/self.kspace.shape[0]**3
 
     def fit( self, nClusters, angleStepKspace=10.0, maxDelta=1E-4, nGAgenerations=50 ):
+        """
+        Fit the simulated scattering pattern to the experimental by using the Genetic Algorithm
+        """
         self.segment( nClusters )
         self.ga = ga.GeneticAlgorithm( self, maxDelta, self.comm, nGAgenerations, debug=self.debug )
         self.ga.run( angleStepKspace )
