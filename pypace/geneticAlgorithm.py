@@ -63,7 +63,7 @@ class GeneticAlgorithm(object):
         randnum = np.random.rand()*S
         for i in range(0,len(self.fitness)):
             cumsum += self.fitness[i]
-            if ( cumsum > randum ):
+            if ( cumsum > randnum ):
                 parent1 = i
                 oldFitParam = self.fitness[parent1]
                 self.fitness[parent1] = 0.0
