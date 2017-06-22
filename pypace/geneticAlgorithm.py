@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import densityCorrector as dc
 from mpi4py import MPI
@@ -40,7 +41,7 @@ class GeneticAlgorithm(object):
             if ( self.debug ):
                 print ("Rank %d: Computing fitness factor for individual %d"%(self.comm.Get_rank(),i))
             if ( self.comm.Get_rank() == 0 and self.printStatusMessage ):
-                print ("Generation %d, %.1f \%"%(self.currentGeneration,i*100/end), end="\r")
+                print ("Generation %d, %.1f"%(self.currentGeneration,i*100/end), end="\r")
             # Insert the means in to the clusters
             self.dc.segmentor.means = self.population[i,:]
             self.dc.segmentor.replaceDataWithMeans()
