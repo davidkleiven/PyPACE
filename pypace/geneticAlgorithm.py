@@ -14,7 +14,7 @@ class GeneticAlgorithm(object):
         self.nPopulations = 10*len(self.dc.segmentor.means)
         # Round this number to be an integer number of the number of processes
         self.nPopulations = int(1+self.nPopulations/comm.size)*comm.size
-        self.nGenes = len(self.dc.segmentor.means)
+        self.nGenes = len(self.dc.segmentor.means)-1 # -1: The cluster corresponding to the outer is forced to be zero
         self.population = np.random.rand(self.nPopulations,self.nGenes)*maxValue
         self.numberOfGenesToMutate = int(self.nGenes*self.nPopulations*0.001)
         self.nGenerations = nGenerations
@@ -41,9 +41,10 @@ class GeneticAlgorithm(object):
             if ( self.debug ):
                 print ("Rank %d: Computing fitness factor for individual %d"%(self.comm.Get_rank(),i))
             if ( self.comm.Get_rank() == 0 and self.printStatusMessage ):
-                print ("Generation %d, %.1f"%(self.currentGeneration,i*100/end), end="\r")
+                print ("Generation %d, %.1f"%(self.currentGeneration,i*100/end))
             # Insert the means in to the clusters
-            self.dc.segmentor.means = self.population[i,:]
+            self.dc.segmentor.means[0] = 0.0 # Force the region surrounding the scatterer to have delta = 0
+            self.dc.segmentor.means[1:] = self.population[i,:]
             self.dc.segmentor.replaceDataWithMeans()
             self.dc.buildKspace( angleStepDeg )
             self.fitness[i] = 1.0/self.dc.costFunction()
