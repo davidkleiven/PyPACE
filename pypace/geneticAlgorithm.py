@@ -120,8 +120,8 @@ class GeneticAlgorithm(object):
             self.reproduce()
             self.mutate()
             self.currentGeneration += 1
-            fname = "bestIdividuals.csv"
-            np.savetxt( fname , self.bestIdividuals[:], delimiter="," )
+            fname = "bestIndividuals.csv"
+            np.savetxt( fname , self.bestIndividuals[:self.currentGeneration,:], delimiter="," )
             print ("Best individual in each generation written to %s"%(fname))
 
     def run( self, angleStepKspace ):
