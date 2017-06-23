@@ -61,7 +61,8 @@ class GeneticAlgorithm(object):
         """
         Select parents using roulette search
         """
-        shiftedFitness = self.fitness+self.fitness.min()
+        shiftedFitness = np.zeros(len(self.fitness))
+        shiftedFitness[:] = self.fitness[:]+self.fitness.min()
         S = np.sum(shiftedFitness)
         cumsum = 0.0
         randnum = np.random.rand()*S
