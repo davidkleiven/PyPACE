@@ -204,30 +204,3 @@ class DensityCorrector(object):
         self.ga = ga.GeneticAlgorithm( self, maxDelta, self.comm, nGAgenerations, debug=self.debug )
         self.ga.printStatusMessage = printStatusMessage
         self.ga.run( angleStepKspace )
-
-    def addMoreRuns( self, angleStepKspace=10.0, nGAgenerations=50 ):
-        """
-        Run more generations from an already initialized list
-        """
-        previousFitness = self.ga.fitness
-        self.ga.fitness = np.zeros((self.ga.fitness.shape[0]+nGAgenerations,self.ga.fitness[1]))
-        self.ga.fitness[:previousFitness.shape[0],:] = previousFitness
-        self.ga.run( angleStepKspace )
-
-    def dump( self, fname ):
-        """
-        Dumps the entire content of this object to a pickle file
-        """
-        if ( not self.comm is None ):
-            if ( self.comm.Get_rank() == 0 ):
-                self.comm = None # Intracomm object cannot be pickled
-                out = open( fname, 'wb' )
-                pck.dump( self, out )
-                out.close()
-                print ("Pickled object written to %s"%(fname))
-        else:
-            self.comm = None # Intracomm object cannot be pickled
-            out = open( fname, 'wb' )
-            pck.dump( self, out )
-            out.close()
-            print ("Pickled object written to %s"%(fname))
