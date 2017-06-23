@@ -61,23 +61,23 @@ class GeneticAlgorithm(object):
         """
         Select parents using roulette search
         """
-        shiftesFitness = self.fitness+self.fitness.min()
-        S = np.sum(shiftesFitness)
+        shiftedFitness = self.fitness+self.fitness.min()
+        S = np.sum(shiftedFitness)
         cumsum = 0.0
         randnum = np.random.rand()*S
-        for i in range(0,len(shiftesFitness)):
-            cumsum += (shiftesFitness[i])
-            if ( cumsum > randnum ):
+        for i in range(0,len(shiftedFitness)):
+            cumsum += shiftedFitness[i]
+            if ( cumsum >= randnum ):
                 parent1 = i
-                shiftesFitness[parent1] = 0.0
+                shiftedFitness[parent1] = 0.0
                 break
 
         cumsum = 0.0
-        S = np.sum( shiftesFitness )
+        S = np.sum( shiftedFitness )
         randnum = np.random.rand()*S
-        for i in range(0,len(shiftesFitness)):
-            cumsum += shiftesFitness[i]
-            if ( cumsum > randnum ):
+        for i in range(0,len(shiftedFitness)):
+            cumsum += shiftedFitness[i]
+            if ( cumsum >= randnum ):
                 parent2 = i
                 return parent1, parent2
         if ( self.printStatusMessage ):
