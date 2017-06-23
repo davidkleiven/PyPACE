@@ -5,6 +5,9 @@ from mpi4py import MPI
 import pickle as pck
 import copy
 
+class GACouldNotFindParentsError(Exception):
+    pass
+
 class GeneticAlgorithm(object):
     def __init__( self, densCorr, maxValue, comm, nGenerations, debug=False ):
         if ( not isinstance(densCorr,dc.DensityCorrector) ):
@@ -78,7 +81,7 @@ class GeneticAlgorithm(object):
                 parent2 = i
                 self.fitness[parent1] = oldFitParam
                 return parent1, parent2
-        raise Exception("An unexpected error occured: Could not find parents!")
+        raise GACouldNotFindParentsError("An unexpected error occured: Could not find parents!")
 
     def reproduce( self ):
         """
