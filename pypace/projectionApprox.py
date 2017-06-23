@@ -1,8 +1,11 @@
 from __future__ import print_function
+import config
 import numpy as np
 import copy
 from scipy.ndimage import interpolation as sciinterp
 import matplotlib as mpl
+if ( not config.enableShow ):
+    mpl.use("Agg")
 from matplotlib import pyplot as plt
 from mpi4py import MPI
 
