@@ -196,12 +196,13 @@ class DensityCorrector(object):
         """
         return np.sqrt( np.sum( (self.newKspace[self.mask==1]-self.kspace[self.mask==1])**2 ) )/self.kspace.shape[0]**3
 
-    def fit( self, nClusters, angleStepKspace=10.0, maxDelta=1E-4, nGAgenerations=50 ):
+    def fit( self, nClusters, angleStepKspace=10.0, maxDelta=1E-4, nGAgenerations=50, printStatusMessage=True ):
         """
         Fit the simulated scattering pattern to the experimental by using the Genetic Algorithm
         """
         self.segment( nClusters )
         self.ga = ga.GeneticAlgorithm( self, maxDelta, self.comm, nGAgenerations, debug=self.debug )
+        self.ga.printStatusMessage = printStatusMessage
         self.ga.run( angleStepKspace )
 
     def addMoreRuns( self, angleStepKspace=10.0, nGAgenerations=50 ):
@@ -219,12 +220,14 @@ class DensityCorrector(object):
         """
         if ( not self.comm is None ):
             if ( self.comm.Get_rank() == 0 ):
+                self.comm = None # Intracomm object cannot be pickled
                 out = open( fname, 'wb' )
-                pck.dump( out, self )
+                pck.dump( self, out )
                 out.close()
                 print ("Pickled object written to %s"%(fname))
         else:
+            self.comm = None # Intracomm object cannot be pickled
             out = open( fname, 'wb' )
-            pck.dump( out, self )
+            pck.dump( self, out )
             out.close()
             print ("Pickled object written to %s"%(fname))
