@@ -50,7 +50,7 @@ class GeneticAlgorithm(object):
             self.dc.segmentor.means[1:] = self.population[i,:]
             self.dc.segmentor.replaceDataWithMeans()
             self.dc.buildKspace( angleStepDeg )
-            self.fitness[i] = -self.dc.costFunction() # Use the negative of the cross cost function --> value with smallest cost gets the largest fitness
+            self.fitness[i] = 1.0/self.dc.costFunction() # Use the negative of the cross cost function --> value with smallest cost gets the largest fitness
 
         # Collect the fitness from the other processes
         dest = np.zeros(self.fitness.shape)
@@ -61,23 +61,22 @@ class GeneticAlgorithm(object):
         """
         Select parents using roulette search
         """
-        shiftedFitness = np.zeros(len(self.fitness))
-        shiftedFitness[:] = self.fitness[:]+self.fitness.min()
-        S = np.sum(shiftedFitness)
+        S = np.sum(self.fitness)
         cumsum = 0.0
         randnum = np.random.rand()*S
-        for i in range(0,len(shiftedFitness)):
-            cumsum += shiftedFitness[i]
+        for i in range(0,len(self.fitness)):
+            cumsum += self.fitness[i]
             if ( cumsum >= randnum ):
                 parent1 = i
-                shiftedFitness[parent1] = 0.0
+                oldFitnessParam = self.fitness[parent1]
+                self.fitness[parent1] = self.fitness.min()
                 break
 
         cumsum = 0.0
-        S = np.sum( shiftedFitness )
+        S = np.sum( self.fitness )
         randnum = np.random.rand()*S
-        for i in range(0,len(shiftedFitness)):
-            cumsum += shiftedFitness[i]
+        for i in range(0,len(self.fitness)):
+            cumsum += self.fitness[i]
             if ( cumsum >= randnum ):
                 parent2 = i
                 return parent1, parent2
