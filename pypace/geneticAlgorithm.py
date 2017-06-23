@@ -50,7 +50,7 @@ class GeneticAlgorithm(object):
             self.dc.segmentor.means[1:] = self.population[i,:]
             self.dc.segmentor.replaceDataWithMeans()
             self.dc.buildKspace( angleStepDeg )
-            self.fitness[i] = 1.0/self.dc.costFunction()
+            self.fitness[i] = -self.dc.costFunction() # Use the negative of the cross cost function --> value with smallest cost gets the largest fitness
 
         # Collect the fitness from the other processes
         dest = np.zeros(self.fitness.shape)
@@ -61,25 +61,24 @@ class GeneticAlgorithm(object):
         """
         Select parents using roulette search
         """
-        S = np.sum(self.fitness)
+        shiftesFitness = self.fitness+self.fitness.min()
+        S = np.sum(shiftesFitness)
         cumsum = 0.0
         randnum = np.random.rand()*S
-        for i in range(0,len(self.fitness)):
-            cumsum += self.fitness[i]
+        for i in range(0,len(shiftesFitness)):
+            cumsum += (shiftesFitness[i])
             if ( cumsum > randnum ):
                 parent1 = i
-                oldFitParam = self.fitness[parent1]
-                self.fitness[parent1] = 0.0
+                shiftesFitness[parent1] = 0.0
                 break
 
         cumsum = 0.0
-        S = np.sum( self.fitness )
+        S = np.sum( shiftesFitness )
         randnum = np.random.rand()*S
-        for i in range(0,len(self.fitness)):
-            cumsum += self.fitness[i]
+        for i in range(0,len(shiftesFitness)):
+            cumsum += shiftesFitness[i]
             if ( cumsum > randnum ):
                 parent2 = i
-                self.fitness[parent1] = oldFitParam
                 return parent1, parent2
         if ( self.printStatusMessage ):
             print ("Warning! Could not find parents. Selecting random")
