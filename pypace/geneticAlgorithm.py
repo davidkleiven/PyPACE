@@ -79,6 +79,7 @@ class GeneticAlgorithm(object):
             cumsum += self.fitness[i]
             if ( cumsum >= randnum ):
                 parent2 = i
+                self.fitness[parent1] = oldFitnessParam
                 return parent1, parent2
         if ( self.printStatusMessage ):
             print ("Warning! Could not find parents. Selecting random")
