@@ -81,11 +81,7 @@ class GeneticAlgorithm(object):
                 parent2 = i
                 self.fitness[parent1] = oldFitnessParam
                 return parent1, parent2
-        if ( self.printStatusMessage ):
-            print ("Warning! Could not find parents. Selecting random")
-        parent1 = np.random.randint(low=0, high=len(self.fitness))
-        parent2 = np.random.randint(low=0, high=len(self.fitness))
-        return parent1, parent2
+        raise RuntimeError("Did not manage to find parents!")
         #raise GACouldNotFindParentsError("An unexpected error occured: Could not find parents!")
 
     def reproduce( self ):
@@ -93,7 +89,24 @@ class GeneticAlgorithm(object):
         Create a new generation by single point cross over from two parents
         """
         copyPop = copy.deepcopy(self.population)
-        for i in range(self.nPopulations):
+        # First find the two best solutions and pass them to the next generation
+        Npass = 3
+        oldBestFitness = np.zeros(Npass)
+        bestIndx = np.zeros(Npass,dtype=np.int32)
+        # Extract the best individuals
+        for i in range(0,Npass):
+            best = np.argmax(self.fitness)
+            bestIndx[i] = best
+            oldBestFitness[i] = self.fitness[best]
+            self.fitness[best] = self.fitness.min()
+            self.population[i,:] = copyPop[best,:]
+
+        # Insert the fitness back into the fitness array
+        for i in range(0,Npass):
+            self.fitness[bestIndx[i]] = oldBestFitness[i]
+
+        # Create the rest of the generation based on parents
+        for i in range(Npass, self.nPopulations):
             parent1,parent2 = self.getParents()
             crossPoint = np.random.randint(low=0,high=self.nGenes)
             self.population[i,:crossPoint] = copyPop[parent1,:crossPoint]
@@ -130,6 +143,7 @@ class GeneticAlgorithm(object):
             self.currentGeneration += 1
             fname = "bestIndividuals.csv"
             np.savetxt( fname , self.bestIndividuals[:self.currentGeneration,:], delimiter="," )
+            np.savetxt( "data/lastGeneration%d.csv"%(self.currentGeneration), self.population, delimiter="," )
             print ("Best individual in each generation written to %s"%(fname))
 
     def run( self, angleStepKspace ):

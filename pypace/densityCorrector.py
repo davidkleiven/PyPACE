@@ -176,9 +176,11 @@ class DensityCorrector(object):
         Compute 3D scattering pattern using the projection approximation
         """
         if ( not self.qweight.weightsAreComputed ):
-            self.qweight.compute()
+            self.qweight.compute( showPlot=True )
             self.qweight.weightData( self.kspace )
+            print ("Qweight slope", self.qweight.slope)
 
+        #print (self.kspace)
         self.newKspace = self.projector.generateKspace( angleStepDeg )
         self.qweight.weightData( self.newKspace )
         self.newKspace *= self.kspaceIntegral/self.newKspace.sum()

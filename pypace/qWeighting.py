@@ -35,6 +35,8 @@ class Qweight(object):
         # Filter out very small values
         rbins = rbins[radialMean > 1E-6*radialMean.max()]
         radialMean = radialMean[radialMean > 1E-6*radialMean.max()]
+        dr = rbins[1]-rbins[0]
+        rbins += dr/2.0
 
         self.slope, self.interscept, rvalue, pvalue, stderr = stats.linregress( np.log(rbins), np.log(radialMean) )
         self.weightsAreComputed = True
@@ -48,6 +50,7 @@ class Qweight(object):
 
             ax2 = fig.add_subplot(1,2,2)
             ax2.plot( rbins, radialMean/self.getWeight(rbins), color="black")
+            plt.show()
 
     def getWeight( self, q ):
         """
