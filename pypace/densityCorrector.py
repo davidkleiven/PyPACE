@@ -14,6 +14,7 @@ from scipy.ndimage import interpolation as sciinterp
 import multiprocessing as mp
 import geneticAlgorithm as ga
 from mpi4py import MPI
+import pickle as pck
 
 
 class DensityCorrector(object):
@@ -23,7 +24,7 @@ class DensityCorrector(object):
         self.kspaceIntegral = self.kspace.sum()
         self.segmentor = seg.Segmentor(self.reconstructed, comm)
         self.qweight = qw.Qweight( self.kspace )
-        self.projector = pa.ProjectionPropagator( self.reconstructed, wavelength, voxelsize )
+        self.projector = pa.ProjectionPropagator( self.reconstructed, wavelength, voxelsize, kspaceDim=self.kspace.shape[0] )
         self.newKspace = None
         self.optimalRotationAngleDeg = 0
         self.hasOptimizedRotation = False
@@ -31,6 +32,7 @@ class DensityCorrector(object):
         self.ga = None
         self.debug = debug
         self.mask = np.zeros(self.kspace.shape, dtype=np.uint8 )
+
 
     def plotRec( self, show=False, cmap="inferno" ):
         """
@@ -201,3 +203,28 @@ class DensityCorrector(object):
         self.segment( nClusters )
         self.ga = ga.GeneticAlgorithm( self, maxDelta, self.comm, nGAgenerations, debug=self.debug )
         self.ga.run( angleStepKspace )
+
+    def addMoreRuns( self, angleStepKspace=10.0, nGAgenerations=50 ):
+        """
+        Run more generations from an already initialized list
+        """
+        previousFitness = self.ga.fitness
+        self.ga.fitness = np.zeros((self.ga.fitness.shape[0]+nGAgenerations,self.ga.fitness[1]))
+        self.ga.fitness[:previousFitness.shape[0],:] = previousFitness
+        self.ga.run( angleStepKspace )
+
+    def dump( self, fname ):
+        """
+        Dumps the entire content of this object to a pickle file
+        """
+        if ( not self.comm is None ):
+            if ( self.comm.Get_rank() == 0 ):
+                out = open( fname, 'wb' )
+                pck.dump( out, self )
+                out.close()
+                print ("Pickled object written to %s"%(fname))
+        else:
+            out = open( fname, 'wb' )
+            pck.dump( out, self )
+            out.close()
+            print ("Pickled object written to %s"%(fname))
