@@ -22,6 +22,7 @@ def main( argv ):
             dCorr.plotKspace( dCorr.kspace )
             dCorr.buildKspace( 10.0 )
             dCorr.plotKspace( dCorr.newKspace )
+            dCorr.plotKspace( dCorr.kspace )
             plt.show()
         elif ( arg.find("--fit") != -1 ):
             dCorr.fit( 6 )
