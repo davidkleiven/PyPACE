@@ -194,7 +194,7 @@ class DensityCorrector(object):
         Return the mean square error between the simulated and the measured scattering mattern
         All points that are not included in the experimental dataset are masked out
         """
-        return np.sqrt( np.sum( (self.newKspace[self.mask==1]-self.kspace[self.mask==1])**2 ) )/self.kspace.shape[0]**3
+        return np.sqrt( np.sum( (self.newKspace[self.mask==1]-self.kspace[self.mask==1])**2 ) )
 
     def fit( self, nClusters, angleStepKspace=10.0, maxDelta=1E-4, nGAgenerations=50, printStatusMessage=True ):
         """
