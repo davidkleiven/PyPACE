@@ -81,7 +81,12 @@ class GeneticAlgorithm(object):
                 parent2 = i
                 self.fitness[parent1] = oldFitParam
                 return parent1, parent2
-        raise GACouldNotFindParentsError("An unexpected error occured: Could not find parents!")
+        if ( self.printStatusMessage ):
+            print ("Warning! Could not find parents. Selecting random")
+        parent1 = np.random.randint(low=0, high=len(self.fitness))
+        parent2 = np.random.randint(low=0, high=len(self.fitness))
+        return parent1, parent2
+        #raise GACouldNotFindParentsError("An unexpected error occured: Could not find parents!")
 
     def reproduce( self ):
         """
@@ -98,7 +103,7 @@ class GeneticAlgorithm(object):
         """
         Mutate some genes by assigning a random value
         """
-        genesToMutate = np.random.randint(low=0,high=self.nPopulations*self.nGenes, size=self.numberGenesOfToMutate)
+        genesToMutate = np.random.randint(low=0,high=self.nPopulations*self.nGenes, size=self.numberOfGenesToMutate)
         for num in genesToMutate:
             individual = int( num/self.nPopulations )
             gene = num%self.nGenes
