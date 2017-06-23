@@ -178,7 +178,6 @@ class DensityCorrector(object):
         if ( not self.qweight.weightsAreComputed ):
             self.qweight.compute( showPlot=True )
             self.qweight.weightData( self.kspace )
-            print ("Qweight slope", self.qweight.slope)
 
         #print (self.kspace)
         self.newKspace = self.projector.generateKspace( angleStepDeg )
