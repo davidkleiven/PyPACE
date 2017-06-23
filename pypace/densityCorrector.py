@@ -1,6 +1,9 @@
 from __future__ import print_function
+import config
 import numpy as np
 import matplotlib as mpl
+if ( not config.enableShow ):
+    mpl.use("Agg")
 mpl.rcParams["svg.fonttype"] = "none"
 mpl.rcParams["axes.unicode_minus"] = False
 from matplotlib import pyplot as plt

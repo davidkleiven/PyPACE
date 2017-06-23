@@ -1,4 +1,8 @@
 import categorize as ctg
+import config
+import matplotlib as mpl
+if ( not config.enableShow ):
+    mpl.use("Agg")
 from matplotlib import pyplot as plt
 from scipy import stats
 import numpy as np
