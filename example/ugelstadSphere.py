@@ -17,7 +17,7 @@ def main( argv ):
     dCorr = dc.DensityCorrector( reconstruct, kspace, 0.17, 55.2, comm=comm, debug=False )
     for arg in argv:
         if ( arg.find("--exploreData") != -1 ):
-            dCorr.segment( 6 )
+            dCorr.segment( 10 )
             dCorr.segmentor.replaceDataWithMeans()
             dCorr.plotKspace( dCorr.kspace )
             dCorr.buildKspace( 10.0 )
@@ -25,7 +25,7 @@ def main( argv ):
             dCorr.plotKspace( dCorr.kspace )
             plt.show()
         elif ( arg.find("--fit") != -1 ):
-            dCorr.fit( 6 )
+            dCorr.fit( 10, angleStepKspace=20, nGAgenerations=1000 )
         elif ( arg.find("--testFit") != -1 ):
             dCorr.fit( 2, nGAgenerations=1 )
 
