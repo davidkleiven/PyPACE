@@ -28,7 +28,7 @@ class Object2ScatteredTransformer( object ):
 
 class Rytov( Object2ScatteredTransformer ):
     def __init__( self, fourierdata, incidentAmplitude ):
-        super().__init__( fourierdata )
+        Object2ScatteredTransformer.__init__( self, fourierdata )
         self.amplitude = incidentAmplitude
 
     def forward( self ):
@@ -53,7 +53,7 @@ class Rytov( Object2ScatteredTransformer ):
 
 class FirstBorn( Object2ScatteredTransformer ):
     def __init__( self, kspace ):
-        super().__init__( kspace )
+        Object2ScatteredTransformer.__init__( self, kspace )
 
     def forward( self ):
         """
