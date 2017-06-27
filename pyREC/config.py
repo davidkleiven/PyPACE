@@ -1,0 +1,2 @@
+# Configuration variables
+enableMPLShow = False
