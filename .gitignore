@@ -102,3 +102,4 @@ ENV/
 
 # Additional added
 data/*
+bestIndividuals.csv
