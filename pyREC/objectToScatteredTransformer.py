@@ -6,12 +6,13 @@ class Object2ScatteredTransformer( object ):
     def __init__( self, scatteredData ):
         if ( len(scatteredData.shape) != 3 ):
             raise TypeError("The array scatteredData has to have dimensions 3")
+
         self.objectData = ftw.empty_aligned( scatteredData.shape, dtype="complex128" )
         self.scatteredData = ftw.empty_aligned( scatteredData.shape, dtype="complex128")
+        self.fftF = ftw.FFTW(self.objectData,self.scatteredData, direction="FFTW_FORWARD", threads=mp.cpu_count(), axes=(0,1,2))
+        self.fftB = ftw.FFTW(self.scatteredData,self.objectData, direction="FFTW_BACKWARD", threads=mp.cpu_count(), axes=(0,1,2))
         self.objectData[:,:,:] = np.zeros(self.scatteredData.shape)
         self.scatteredData[:,:,:] = scatteredData[:,:,:]
-        self.fftF = ftw.FFTW(self.objectData,self.scatteredData, direction="FFTW_FORWARD", threads=mp.cpu_count())
-        self.fftB = ftw.FFTW(self.scatteredData,self.objectData, direction="FFTW_BACKWARD", threads=mp.cpu_count())
 
     def forward( self ):
         """
@@ -34,12 +35,10 @@ class Rytov( Object2ScatteredTransformer ):
         """
         Transforms from object space to scattered space
         """
-        self.fftF()
-        self.scatteredData[:,:,:] = np.fft.fftshift(self.scatteredData)
+        self.fftF( normalise_idft=False, ortho=True )
 
-        ftNorm = np.sqrt(self.scatteredData.shape[0]*self.scatteredData.shape[1]*self.scatteredData.shape[2])
         # Normalize the data
-        self.scatteredData /= (ftNorm*self.amplitude)
+        self.scatteredData[:,:,:] = self.scatteredData/self.amplitude
         self.scatteredData[:,:,:] = self.amplitude*( np.exp(1j*self.scatteredData[:,:,:]) - 1.0 )
         return self.scatteredData
 
@@ -49,29 +48,23 @@ class Rytov( Object2ScatteredTransformer ):
         """
         # Convert back to phase
         self.scatteredData[:,:,:] = -1j*self.amplitude*np.log( 1.0 + self.scatteredData[:,:,:]/self.amplitude)
-        self.fftB()
-        ftNorm = np.sqrt(self.scatteredData.shape[0]*self.scatteredData.shape[1]*self.scatteredData.shape[2])
-        self.objectData[:,:,:] = np.fft.fftshift(self.objectData)
-        self.objectData /= ftNorm
+        self.fftB( normalise_idft=False, ortho=True )
         return self.objectData
 
 class FirstBorn( Object2ScatteredTransformer ):
-    def __init__( self, realspace ):
-        super().__init__( realspace )
+    def __init__( self, kspace ):
+        super().__init__( kspace )
 
     def forward( self ):
         """
         Transforms the obect space to scattered space
         """
-        self.fftF()
-        self.scatteredData[:,:,:] = np.fft.fftshift( self.scatteredData )
+        self.fftF( normalise_idft=False, ortho=True )
         return self.scatteredData
 
     def backward( self ):
         """
         Transforms back again
         """
-        self.fftB()
-        ftNorm = np.sqrt(self.scatteredData.shape[0]*self.scatteredData.shape[1]*self.scatteredData.shape[2])
-        self.objectData /= ftNorm
+        self.fftB( normalise_idft=False, ortho=True )
         return self.objectData

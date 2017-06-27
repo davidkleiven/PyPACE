@@ -12,10 +12,14 @@ class TestRytovBackForw( unittest.TestCase ):
         try:
             ksp = np.load( "pyREC/kspaceCoatedSphere3D.npy" )
             rytov = otst.Rytov( ksp, 1.0 )
-            #rytov.backward()
-            #rytov.forward()
-
-            diff = np.sqrt( np.sum( (ksp-rytov.scatteredData)**2 ) )
+            rytov = otst.FirstBorn( ksp, )
+            rytov.backward()
+            rytov.forward()
+            rytov.backward()
+            rytov.forward()
+            rytov.backward()
+            rytov.forward()
+            diff = np.sqrt( np.sum( (ksp-np.real(rytov.scatteredData))**2 ) )
         except Exception as exc:
             noThrow = False
             msg = str(exc)
