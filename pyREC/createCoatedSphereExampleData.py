@@ -1,6 +1,9 @@
 from __future__ import print_function
 import numpy as np
 import matplotlib as mpl
+import config
+if ( not config.enableMPLShow ):
+    mpl.use("Agg")
 from matplotlib import pyplot as plt
 
 def main():

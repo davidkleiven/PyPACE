@@ -2,7 +2,9 @@ import numpy as np
 import objectToScatteredTransformer as otst
 import constraints as cnst
 import matplotlib as mpl
-#mpl.use("Agg")
+import config
+if ( not config.enableMPLShow ):
+    mpl.use("Agg")
 from matplotlib import pyplot as plt
 from scipy import ndimage
 
