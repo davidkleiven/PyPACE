@@ -12,7 +12,6 @@ class TestRytovBackForw( unittest.TestCase ):
         try:
             ksp = np.load( "pyREC/kspaceCoatedSphere3D.npy" )
             rytov = otst.Rytov( ksp, 1.0 )
-            rytov = otst.FirstBorn( ksp, )
             rytov.backward()
             rytov.forward()
             rytov.backward()

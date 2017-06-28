@@ -60,7 +60,7 @@ class FractionOfMaxSupport( Support ):
 class LargerThanFractionAfterGaussianBlur( Support ):
     def __init__( self, fraction, mode="real" ):
         Support.__init__( self, mode=mode)
-        self.width = 2.0
+        self.width = 15.0
         self.decay = 0.01
         self.fraction = fraction
 

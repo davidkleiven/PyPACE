@@ -36,6 +36,7 @@ class Hybrid( RealSpaceConstraint ):
 
     def apply( self, data ):
         mask = self.support.get(data)
+        mask[data.real<0.0] = 0
         #data[mask==0] = self.lastObject[mask==0] - self.beta*data[mask==0]
         data[mask==0] -= self.beta*self.lastObject[mask==0]
         return data
