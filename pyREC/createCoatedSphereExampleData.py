@@ -10,11 +10,11 @@ def main():
     #kspace = np.zeros((512,512,512))
     au = 4.9E-5
     pmma = 8.5E-6
-    N = 256
+    N = 128
     delta = np.zeros((N,N,N))
     shape = delta.shape
-    Rau = 64
-    Rpmma = 58
+    Rau = 32
+    Rpmma = 28
     del delta
     x = np.linspace(-N/2,N/2,shape[0])
     y = np.linspace(-N/2,N/2,shape[1])

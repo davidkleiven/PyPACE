@@ -14,8 +14,11 @@ class Object2ScatteredTransformer( object ):
         else:
             self.objectData = ftw.empty_aligned( scatteredData.shape, dtype="complex128" )
             self.scatteredData = ftw.empty_aligned( scatteredData.shape, dtype="complex128")
-            self.fftF = ftw.FFTW(self.objectData,self.scatteredData, direction="FFTW_FORWARD", threads=mp.cpu_count(), axes=(0,1,2))
-            self.fftB = ftw.FFTW(self.scatteredData,self.objectData, direction="FFTW_BACKWARD", threads=mp.cpu_count(), axes=(0,1,2))
+            print (self.scatteredData.shape)
+            #self.fftF = ftw.FFTW(self.objectData,self.scatteredData, direction="FFTW_FORWARD", threads=mp.cpu_count(), axes=(0,1,2))
+            self.fftF = ftw.builders.fftn(self.objectData, threads=mp.cpu_count() )
+            #self.fftB = ftw.FFTW(self.scatteredData,self.objectData, direction="FFTW_BACKWARD", threads=mp.cpu_count(), axes=(0,1,2))
+            self.fftB = ftw.builders.ifftn(self.scatteredData, threads=mp.cpu_count() )
         self.objectData[:,:,:] = np.zeros(self.scatteredData.shape)
         self.scatteredData[:,:,:] = scatteredData[:,:,:]
         self.numpyFFT = numpyFFT
@@ -69,7 +72,8 @@ class FirstBorn( Object2ScatteredTransformer ):
             self.scatteredData = np.fft.fftn( self.objectData, norm="ortho" )
             self.scatteredData = np.fft.fftshift( self.scatteredData )
         else:
-            self.fftF( normalise_idft=False, ortho=True )
+            self.scatteredData = self.fftF( normalise_idft=False, ortho=True )
+            #self.scatteredData = np.fft.fftshift( self.scatteredData )
         # Compute the average phase
         #avgPhase = np.sum( np.angle(self.scatteredData) )
         #self.scatteredData *= np.exp(-1j*avgPhase)
@@ -83,7 +87,8 @@ class FirstBorn( Object2ScatteredTransformer ):
             self.objectData = np.fft.ifftn( self.scatteredData, norm="ortho" )
             #self.objectData = np.fft.ifftshift(self.objectData )
         else:
-            self.fftB( normalise_idft=False, ortho=True )
+            self.objectData = self.fftB( normalise_idft=False, ortho=True )
+            self.objectData = np.fft.ifftshift( self.objectData )
 
         # Shift the object to center
         com = ndimage.measurements.center_of_mass( np.abs(self.objectData) )

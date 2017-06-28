@@ -21,7 +21,7 @@ class Reconstructor( object ):
         self.transformer = obj2ScatTrans
 
         # Define the supports to be used
-        self.hioSupport = sup.LargerThanFractionAfterGaussianBlur( 0.7, mode="abs" )
+        self.hioSupport = sup.LargerThanFractionAfterGaussianBlur( 0.2, mode="abs" )
         self.signflipSupport = sup.FractionOfMaxSupport( 0.1, mode="abs" )
         self.fixedSupport = self.signflipSupport
 
