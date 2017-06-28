@@ -1,48 +1,50 @@
 import numpy as np
+import supports as sup
 
 class FourierConstraint:
     def __init__( self, measuredScat ):
         self.measured = np.sqrt( np.abs(measuredScat) )
 
     def apply( self, data ):
-        return data*self.measured/np.abs(data)
+        mask = np.zeros(self.measured.shape, dtype=np.uint8 )
+        mask[self.measured>1E-18] = 1
+        data[mask==1] = data[mask==1]*self.measured[mask==1]/np.abs(data[mask==1])
+        data = np.nan_to_num( data )
+        return data
 
 class RealSpaceConstraint(object):
-    def __init__(self):
-        pass
+    def __init__(self, support ):
+        self.support = support
 
     def apply( self, data ):
         raise NotImplementedError("Child classes need to implement the apply function")
 
 class SignFlip( RealSpaceConstraint ):
-    def __init__( self, threshold ):
-        self.threshold = threshold
+    def __init__( self, support ):
+        RealSpaceConstraint.__init__( self, support )
 
     def apply( self, data ):
-        mean = np.mean(np.abs(data))
-        self.threshold = np.percentile(data.real,75)
-        #print (mean,self.threshold)
-        data[data.real<self.threshold] = -data[data.real<self.threshold]
+        mask = self.support.get(data)
+        data[mask==0] = -data[mask==0]
         return data
 
 class Hybrid( RealSpaceConstraint ):
-    def __init__( self, threshold, beta, lastObject ):
-        self.threshold = threshold
+    def __init__( self, beta, lastObject, support ):
+        RealSpaceConstraint.__init__( self, support )
         self.beta = beta
         self.lastObject = lastObject
 
     def apply( self, data ):
-        mean = np.mean(data)
-        self.threshold = np.percentile(data.real,75)
-        data[data.real<self.threshold] = self.lastObject[data.real<self.threshold] - self.beta*data[data.real<self.threshold]
+        mask = self.support.get(data)
+        #data[mask==0] = self.lastObject[mask==0] - self.beta*data[mask==0]
+        data[mask==0] -= self.beta*self.lastObject[mask==0]
         return data
 
 class FixedSupport( RealSpaceConstraint ):
-    def __init__( self, threshold ):
-        self.threshold = threshold
+    def __init__( self, support ):
+        RealSpaceConstraint.__init__( self, support )
 
     def apply( self, data ):
-        mean = np.mean(data)
-        self.threshold = np.percentile(data.real,75)
-        data[data.real<self.threshold] = 0.0
+        mask = self.support.get(data)
+        data[mask==0] = 0.0
         return data

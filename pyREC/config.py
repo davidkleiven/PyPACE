@@ -1,2 +1,2 @@
 # Configuration variables
-enableMPLShow = False
+enableMPLShow = True

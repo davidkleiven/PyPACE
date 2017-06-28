@@ -1,18 +1,24 @@
 import numpy as np
 import pyfftw as ftw
 import multiprocessing as mp
+from scipy import ndimage
 
 class Object2ScatteredTransformer( object ):
-    def __init__( self, scatteredData ):
+    def __init__( self, scatteredData, numpyFFT=False ):
         if ( len(scatteredData.shape) != 3 ):
             raise TypeError("The array scatteredData has to have dimensions 3")
 
-        self.objectData = ftw.empty_aligned( scatteredData.shape, dtype="complex128" )
-        self.scatteredData = ftw.empty_aligned( scatteredData.shape, dtype="complex128")
-        self.fftF = ftw.FFTW(self.objectData,self.scatteredData, direction="FFTW_FORWARD", threads=mp.cpu_count(), axes=(0,1,2))
-        self.fftB = ftw.FFTW(self.scatteredData,self.objectData, direction="FFTW_BACKWARD", threads=mp.cpu_count(), axes=(0,1,2))
+        if ( numpyFFT ):
+            self.objectData = np.zeros( scatteredData.shape, dtype=np.complex128 )
+            self.scatteredData = np.zeros( scatteredData.shape, dtype=np.complex128 )
+        else:
+            self.objectData = ftw.empty_aligned( scatteredData.shape, dtype="complex128" )
+            self.scatteredData = ftw.empty_aligned( scatteredData.shape, dtype="complex128")
+            self.fftF = ftw.FFTW(self.objectData,self.scatteredData, direction="FFTW_FORWARD", threads=mp.cpu_count(), axes=(0,1,2))
+            self.fftB = ftw.FFTW(self.scatteredData,self.objectData, direction="FFTW_BACKWARD", threads=mp.cpu_count(), axes=(0,1,2))
         self.objectData[:,:,:] = np.zeros(self.scatteredData.shape)
         self.scatteredData[:,:,:] = scatteredData[:,:,:]
+        self.numpyFFT = numpyFFT
 
     def forward( self ):
         """
@@ -52,19 +58,36 @@ class Rytov( Object2ScatteredTransformer ):
         return self.objectData
 
 class FirstBorn( Object2ScatteredTransformer ):
-    def __init__( self, kspace ):
-        Object2ScatteredTransformer.__init__( self, kspace )
+    def __init__( self, kspace, numpyFFT=False ):
+        Object2ScatteredTransformer.__init__( self, kspace, numpyFFT=numpyFFT )
 
     def forward( self ):
         """
         Transforms the obect space to scattered space
         """
-        self.fftF( normalise_idft=False, ortho=True )
+        if ( self.numpyFFT ):
+            self.scatteredData = np.fft.fftn( self.objectData, norm="ortho" )
+            self.scatteredData = np.fft.fftshift( self.scatteredData )
+        else:
+            self.fftF( normalise_idft=False, ortho=True )
+        # Compute the average phase
+        #avgPhase = np.sum( np.angle(self.scatteredData) )
+        #self.scatteredData *= np.exp(-1j*avgPhase)
         return self.scatteredData
 
     def backward( self ):
         """
         Transforms back again
         """
-        self.fftB( normalise_idft=False, ortho=True )
+        if ( self.numpyFFT ):
+            self.objectData = np.fft.ifftn( self.scatteredData, norm="ortho" )
+            #self.objectData = np.fft.ifftshift(self.objectData )
+        else:
+            self.fftB( normalise_idft=False, ortho=True )
+
+        # Shift the object to center
+        com = ndimage.measurements.center_of_mass( np.abs(self.objectData) )
+        com = np.array(com)
+        #self.objectData[:,:,:] = ndimage.interpolation.shift( self.objectData.real, com, mode="wrap" )
+        #self.objectData[:,:,:] += 1j*ndimage.interpolation.shift( self.objectData.imag, com, mode="wrap" )
         return self.objectData
