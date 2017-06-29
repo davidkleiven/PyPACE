@@ -1,15 +1,19 @@
+import sys
+sys.path.append(".")
 import numpy as np
 import supports as sup
+import cytParallel as cytp
 
 class FourierConstraint:
     def __init__( self, measuredScat ):
         self.measured = np.sqrt( np.abs(measuredScat) )
 
     def apply( self, data ):
-        mask = np.zeros(self.measured.shape, dtype=np.uint8 )
-        mask[self.measured>1E-18] = 1
-        data[mask==1] = data[mask==1]*self.measured[mask==1]/np.abs(data[mask==1])
-        data = np.nan_to_num( data )
+        #mask = np.zeros(self.measured.shape, dtype=np.uint8 )
+        #mask[self.measured>1E-18] = 1
+        #data[mask==1] = data[mask==1]*self.measured[mask==1]/np.abs(data[mask==1])
+        #data = np.nan_to_num( data )
+        cytp.applyFourierConstraint( data, self.measured )
         return data
 
 class RealSpaceConstraint(object):
@@ -36,9 +40,10 @@ class Hybrid( RealSpaceConstraint ):
 
     def apply( self, data ):
         mask = self.support.get(data)
-        mask[data.real<0.0] = 0
+        #mask[data.real<0.0] = 0
         #data[mask==0] = self.lastObject[mask==0] - self.beta*data[mask==0]
-        data[mask==0] -= self.beta*self.lastObject[mask==0]
+        #data[mask==0] -= self.beta*self.lastObject[mask==0]
+        cytp.applyHybridConstraint( data, mask, self.beta, self.lastObject )
         return data
 
 class FixedSupport( RealSpaceConstraint ):

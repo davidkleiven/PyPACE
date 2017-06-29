@@ -1,5 +1,7 @@
 import numpy as np
 from scipy import ndimage
+import cytParallel as cytp
+import reconstructor as rec
 
 class Support( object ):
     def __init__( self, mode="real" ):
@@ -58,11 +60,15 @@ class FractionOfMaxSupport( Support ):
         return mask
 
 class LargerThanFractionAfterGaussianBlur( Support ):
-    def __init__( self, fraction, mode="real" ):
+    def __init__( self, fraction, reconstruct, mode="real" ):
         Support.__init__( self, mode=mode)
-        self.width = 15.0
+        if ( not isinstance(reconstruct, rec.Reconstructor) ):
+            raise TypeError("Argument reconstruct has to be of type Reconstructor")
+        self.width = 3.0
         self.decay = 0.01
         self.fraction = fraction
+        self.rec = reconstruct
+        self.blurEvery=20
 
     def get( self, data ):
         """
@@ -71,16 +77,21 @@ class LargerThanFractionAfterGaussianBlur( Support ):
         """
         mask = np.zeros(data.shape, dtype=np.uint8 )
         if ( self.mode == "real "):
-            data.real = ndimage.filters.gaussian_filter( data.real, 0.25+self.width )
+            if ( self.rec.currentIter%self.blurEvery == 0 ):
+                data.real = ndimage.filters.gaussian_filter( data.real, 0.25+self.width )
             threshold = np.max(data.real)*self.fraction
-            mask[data.real>threshold] = 1
+            mask = cytp.getThresholdMask( data.real, mask, threshold )
+            #mask[data.real>threshold] = 1
         elif ( self.mode == "imag" ):
-            data.imag = ndimage.filters.gaussian_filter( data.imag, 0.25+self.width )
+            if ( self.rec.currentIter%self.blurEvery == 0 ):
+                data.imag = ndimage.filters.gaussian_filter( data.imag, 0.25+self.width )
             threshold = np.max(data.imag)*self.fraction
             mask[data.imag>threshold] = 1
         else:
-            data = ndimage.filters.gaussian_filter( np.abs(data), 0.25+self.width )
+            if ( self.rec.currentIter%self.blurEvery == 0 ):
+                data = ndimage.filters.gaussian_filter( np.abs(data), 0.25+self.width )
             threshold = np.max(np.abs(data))*self.fraction
-            mask[np.abs(data)>threshold] = 1
+            mask = cytp.getThresholdMask( np.abs(data), mask, threshold )
+            #mask[np.abs(data)>threshold] = 1
         self.width -= self.decay*self.width
         return mask

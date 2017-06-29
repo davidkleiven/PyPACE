@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 from scipy import ndimage
 import supports as sup
 import initialSupports as isup
+import cytParallel as cytp
 
 class Reconstructor( object ):
     def __init__( self, obj2ScatTrans, fractionOfMeanThreshold, beta=0.9, maxIter=500, statusEvery=10,
@@ -21,7 +22,7 @@ class Reconstructor( object ):
         self.transformer = obj2ScatTrans
 
         # Define the supports to be used
-        self.hioSupport = sup.LargerThanFractionAfterGaussianBlur( 0.05, mode="abs" )
+        self.hioSupport = sup.LargerThanFractionAfterGaussianBlur( 0.05, self, mode="abs" )
         self.signflipSupport = sup.FractionOfMaxSupport( 0.1, mode="abs" )
         self.fixedSupport = self.signflipSupport
 
@@ -83,10 +84,12 @@ class Reconstructor( object ):
             self.bestState[:,:,:] = np.abs(self.transformer.objectData)
             self.minResidual = self.residuals[self.currentIter]
 
-        self.transformer.scatteredData[:,:,:] = self.fourier.apply( self.transformer.scatteredData )
+        #self.transformer.scatteredData[:,:,:] = self.fourier.apply( self.transformer.scatteredData )
+        self.fourier.apply( self.transformer.scatteredData )
 
         # Copy the current object to the last object array
-        self.lastObject[:,:,:] = self.transformer.objectData[:,:,:]
+        #self.lastObject[:,:,:] = self.transformer.objectData[:,:,:]
+        cytp.copy( self.transformer.objectData, self.lastObject )
 
         if ( self.currentIter%self.statusEvery == 0 ):
             self.printStatus()
