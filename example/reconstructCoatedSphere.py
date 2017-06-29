@@ -16,6 +16,7 @@ def main():
     rytov = otst.Rytov( kspace, 1.0 )
     born = otst.FirstBorn( kspace, numpyFFT=False )
     initSup = isup.SphericalSupport( kspace.shape[0], 50, 1E-4 )
+    #initSup = isup.BoxSupport( kspace.shape[0], 50, 1E-4 )
     reconstructor = rec.Reconstructor( born, 0.05, beta=1.0, maxIter=200 )
     reconstructor.initDataWithKnownSupport( initSup )
     #reconstructor.initScatteredDataWithRandomPhase()

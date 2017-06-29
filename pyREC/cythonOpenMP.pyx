@@ -4,7 +4,7 @@ cimport numpy as np
 from cython cimport parallel
 from libc cimport math as cmath
 import multiprocessing as mp
-import numpy as regNP
+import numpy as regNP # Regular numpy
 
 cdef int nproc = mp.cpu_count()
 
@@ -80,11 +80,38 @@ def copy( fromData, toData ):
 @ct.wraparound(False)
 def max( array ):
     cdef np.ndarray[np.float64_t] arrayR = array.ravel()
-    cdef np.ndarray[np.float64_t] maxVals = regNP.zeros(nproc)
+    cdef np.ndarray[np.float64_t] maxVals = regNP.zeros(nproc)-1E30
     cdef int i
     cdef int size = array.size
     cdef double maxval = -1E30
     for i in prange(size, nogil=True, schedule="static", num_threads=nproc ):
-        if ( arrayR[i] > maxval ):
+        if ( arrayR[i] > maxVals[parallel.threadid()] ):
             maxVals[parallel.threadid()] = arrayR[i]
     return regNP.max(maxVals)
+
+@ct.boundscheck(False)
+@ct.wraparound(False)
+def meanSquareError( data1, data2 ):
+    assert( data1.size == data2.size )
+    cdef np.ndarray[np.float64_t] data1R = data1.ravel()
+    cdef np.ndarray[np.float64_t] data2R = data2.ravel()
+    cdef int i
+    cdef int size = data1.size
+    cdef np.ndarray[np.float64_t] totalSum = regNP.zeros(nproc)
+    cdef np.ndarray[np.float64_t] diff = regNP.zeros(nproc)
+    for i in prange(size, nogil=True, schedule="static", num_threads=nproc ):
+        diff[parallel.threadid()] = data1R[i] - data2R[i]
+        totalSum[parallel.threadid()] = totalSum[parallel.threadid()] + diff[parallel.threadid()]*diff[parallel.threadid()]
+    return regNP.sqrt( regNP.sum(totalSum) )/size
+
+@ct.boundscheck(False)
+@ct.wraparound(False)
+def modulus( dataIn, dataOut ):
+    assert( dataIn.size == dataOut.size )
+    cdef np.ndarray[np.complex128_t] dataInR = dataIn.ravel()
+    cdef np.ndarray[np.float64_t] dataOutR = dataOut.ravel()
+    cdef int i
+    cdef int size = dataIn.size
+    for i in prange(size, nogil=True, schedule="static", num_threads=nproc ):
+        dataOutR[i] = cabs(dataInR[i])
+    return dataOut

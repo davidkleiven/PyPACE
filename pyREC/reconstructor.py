@@ -63,10 +63,10 @@ class Reconstructor( object ):
             print ("Iteration: %d, residual %.2E"%(self.currentIter, self.residuals[self.currentIter]))
 
     def getFourierResidual( self ):
-        res = np.sqrt( np.sum( np.abs(self.fourier.measured - np.abs(self.transformer.scatteredData))**2 ) )
-        shape = self.fourier.measured.shape
-        res /= np.sum(self.fourier.measured)
-        return res
+        #res = np.sqrt( np.sum( np.abs(self.fourier.measured - np.abs(self.transformer.scatteredData))**2 ) )
+        mod = np.empty(self.transformer.scatteredData.shape)
+        cytp.modulus( self.transformer.scatteredData, mod )
+        return cytp.meanSquareError( self.fourier.measured, mod )
 
     def step( self, constraint ):
         if ( not self.phasesAreInitialized and not self.supportInitialized ):

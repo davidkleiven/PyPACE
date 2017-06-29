@@ -75,7 +75,7 @@ class LargerThanFractionAfterGaussianBlur( Support ):
         Apply gaussian blur and then all pixels with a real part larger than 10 percent of the maxvalue
          is included in the support
         """
-        mask = np.zeros(data.shape, dtype=np.uint8 )
+        mask = np.empty(data.shape, dtype=np.uint8 )
         if ( self.mode == "real "):
             if ( self.rec.currentIter%self.blurEvery == 0 ):
                 data.real = ndimage.filters.gaussian_filter( data.real, 0.25+self.width )
@@ -88,10 +88,12 @@ class LargerThanFractionAfterGaussianBlur( Support ):
             threshold = np.max(data.imag)*self.fraction
             mask[data.imag>threshold] = 1
         else:
+            mod = np.empty(data.shape)
+            cytp.modulus( data, mod )
             if ( self.rec.currentIter%self.blurEvery == 0 ):
-                data = ndimage.filters.gaussian_filter( np.abs(data), 0.25+self.width )
-            threshold = cytp.max( np.abs(data) )*self.fraction
-            mask = cytp.getThresholdMask( np.abs(data), mask, threshold )
+                data = ndimage.filters.gaussian_filter( mod, 0.25+self.width )
+            threshold = cytp.max( mod )*self.fraction
+            mask = cytp.getThresholdMask( mod, mask, threshold )
             #mask[np.abs(data)>threshold] = 1
         self.width -= self.decay*self.width
         return mask
