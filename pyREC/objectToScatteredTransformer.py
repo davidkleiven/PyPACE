@@ -69,10 +69,10 @@ class FirstBorn( Object2ScatteredTransformer ):
         """
         if ( self.numpyFFT ):
             self.scatteredData = np.fft.fftn( self.objectData, norm="ortho" )
-            self.scatteredData = np.fft.fftshift( self.scatteredData )
+            ##self.scatteredData = np.fft.fftshift( self.scatteredData )
         else:
             self.scatteredData[:,:,:] = self.fftF( normalise_idft=False, ortho=True )
-            self.scatteredData[:,:,:] = np.fft.fftshift( self.scatteredData )
+            ##self.scatteredData[:,:,:] = np.fft.fftshift( self.scatteredData )
         # Compute the average phase
         #avgPhase = np.sum( np.angle(self.scatteredData) )
         #self.scatteredData *= np.exp(-1j*avgPhase)
@@ -83,11 +83,11 @@ class FirstBorn( Object2ScatteredTransformer ):
         Transforms back again
         """
         if ( self.numpyFFT ):
-            self.scatteredData[:,:,:] = np.fft.ifftshift( self.scatteredData )
+            #self.scatteredData[:,:,:] = np.fft.ifftshift( self.scatteredData )
             self.objectData = np.fft.ifftn( self.scatteredData, norm="ortho" )
             #self.objectData = np.fft.ifftshift(self.objectData )
         else:
-            self.scatteredData[:,:,:] = np.fft.ifftshift( self.scatteredData )
+            #self.scatteredData[:,:,:] = np.fft.ifftshift( self.scatteredData )
             self.objectData[:,:,:] = self.fftB( normalise_idft=False, ortho=True )
             #self.objectData = np.fft.ifftshift( self.objectData )
 

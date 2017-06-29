@@ -7,6 +7,7 @@ import cytParallel as cytp
 class FourierConstraint:
     def __init__( self, measuredScat ):
         self.measured = np.sqrt( np.abs(measuredScat) )
+        self.measured = np.fft.ifftshift(self.measured)
 
     def apply( self, data ):
         #mask = np.zeros(self.measured.shape, dtype=np.uint8 )
