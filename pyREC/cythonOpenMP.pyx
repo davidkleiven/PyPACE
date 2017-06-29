@@ -1,8 +1,10 @@
 cimport cython as ct
 from cython.parallel cimport prange
 cimport numpy as np
+from cython cimport parallel
 from libc cimport math as cmath
 import multiprocessing as mp
+import numpy as regNP
 
 cdef int nproc = mp.cpu_count()
 
@@ -73,3 +75,16 @@ def copy( fromData, toData ):
     for i in prange(size, nogil=True, schedule="static", num_threads=nproc):
         toR[i] = fromR[i]
     return toData
+
+@ct.boundscheck(False)
+@ct.wraparound(False)
+def max( array ):
+    cdef np.ndarray[np.float64_t] arrayR = array.ravel()
+    cdef np.ndarray[np.float64_t] maxVals = regNP.zeros(nproc)
+    cdef int i
+    cdef int size = array.size
+    cdef double maxval = -1E30
+    for i in prange(size, nogil=True, schedule="static", num_threads=nproc ):
+        if ( arrayR[i] > maxval ):
+            maxVals[parallel.threadid()] = arrayR[i]
+    return regNP.max(maxVals)

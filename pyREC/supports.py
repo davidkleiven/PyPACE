@@ -79,9 +79,9 @@ class LargerThanFractionAfterGaussianBlur( Support ):
         if ( self.mode == "real "):
             if ( self.rec.currentIter%self.blurEvery == 0 ):
                 data.real = ndimage.filters.gaussian_filter( data.real, 0.25+self.width )
-            threshold = np.max(data.real)*self.fraction
+            #threshold = np.max(data.real)*self.fraction
+            threshold = cytp.max(data.real)*self.fraction
             mask = cytp.getThresholdMask( data.real, mask, threshold )
-            #mask[data.real>threshold] = 1
         elif ( self.mode == "imag" ):
             if ( self.rec.currentIter%self.blurEvery == 0 ):
                 data.imag = ndimage.filters.gaussian_filter( data.imag, 0.25+self.width )
@@ -90,7 +90,7 @@ class LargerThanFractionAfterGaussianBlur( Support ):
         else:
             if ( self.rec.currentIter%self.blurEvery == 0 ):
                 data = ndimage.filters.gaussian_filter( np.abs(data), 0.25+self.width )
-            threshold = np.max(np.abs(data))*self.fraction
+            threshold = cytp.max( np.abs(data) )*self.fraction
             mask = cytp.getThresholdMask( np.abs(data), mask, threshold )
             #mask[np.abs(data)>threshold] = 1
         self.width -= self.decay*self.width
