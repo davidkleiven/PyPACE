@@ -92,8 +92,8 @@ class FirstBorn( Object2ScatteredTransformer ):
             #self.objectData = np.fft.ifftshift( self.objectData )
 
         # Shift the object to center
-        com = ndimage.measurements.center_of_mass( np.abs(self.objectData) )
-        com = np.array(com)
+        #com = ndimage.measurements.center_of_mass( np.abs(self.objectData) )
+        #com = np.array(com)
         #self.objectData[:,:,:] = ndimage.interpolation.shift( self.objectData.real, com, mode="wrap" )
         #self.objectData[:,:,:] += 1j*ndimage.interpolation.shift( self.objectData.imag, com, mode="wrap" )
         return self.objectData
