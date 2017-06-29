@@ -22,16 +22,15 @@ class Reconstructor( object ):
         self.transformer = obj2ScatTrans
 
         # Define the supports to be used
-        self.hioSupport = sup.LargerThanFractionAfterGaussianBlur( 0.05, self, mode="abs" )
-        self.signflipSupport = sup.FractionOfMaxSupport( 0.1, mode="abs" )
-        self.fixedSupport = self.signflipSupport
+        self.mask = np.zeros(self.transformer.objectData.shape, dtype=np.uint8 )
+        self.support = sup.Support( self.mask, 0.05 )
 
         self.lastObject = np.zeros(self.transformer.objectData.shape)+1j*np.zeros(self.transformer.objectData.shape)
 
         # Define the different update algorithms to be used
-        self.signflip = cnst.SignFlip( self.signflipSupport )
-        self.hybrid = cnst.Hybrid( beta, self.lastObject, self.hioSupport )
-        self.fixed = cnst.FixedSupport( self.fixedSupport )
+        self.signflip = cnst.SignFlip( self.support )
+        self.hybrid = cnst.Hybrid( beta, self.lastObject, self.support )
+        self.fixed = cnst.FixedSupport( self.support )
         self.fourier = cnst.FourierConstraint( self.transformer.scatteredData )
 
         self.residuals = np.zeros(maxIter+nIterAtEndWithFixed)
@@ -44,6 +43,7 @@ class Reconstructor( object ):
         self.phasesAreInitialized = False
         self.supportInitialized = False
         self.isFirstIteration = True
+        self.updateSupportEvery = 2000
 
     def initScatteredDataWithRandomPhase( self ):
         shape = self.transformer.scatteredData.shape
@@ -63,7 +63,7 @@ class Reconstructor( object ):
             print ("Iteration: %d, residual %.2E"%(self.currentIter, self.residuals[self.currentIter]))
 
     def getFourierResidual( self ):
-        #res = np.sqrt( np.sum( np.abs(self.fourier.measured - np.abs(self.transformer.scatteredData))**2 ) )
+        #res = np.sqrt( np.sum( np.abs(self.fourier.measured - np.abs(ed error in the object domain can be eself.transformer.scatteredData))**2 ) )
         mod = np.empty(self.transformer.scatteredData.shape)
         cytp.modulus( self.transformer.scatteredData, mod )
         return cytp.meanSquareError( self.fourier.measured, mod )
@@ -81,18 +81,18 @@ class Reconstructor( object ):
 
         self.residuals[self.currentIter] = self.getFourierResidual()
         if ( self.residuals[self.currentIter] < self.minResidual):
-            self.bestState[:,:,:] = np.abs(self.transformer.objectData)
+            cytp.modulus( self.transformer.objectData, self.bestState )
             self.minResidual = self.residuals[self.currentIter]
 
-        #self.transformer.scatteredData[:,:,:] = self.fourier.apply( self.transformer.scatteredData )
         self.fourier.apply( self.transformer.scatteredData )
 
         # Copy the current object to the last object array
-        #self.lastObject[:,:,:] = self.transformer.objectData[:,:,:]
         cytp.copy( self.transformer.objectData, self.lastObject )
 
         if ( self.currentIter%self.statusEvery == 0 ):
             self.printStatus()
+        if ( self.currentIter%self.updateSupportEvery == 0 ):
+            self.support.update( self.transformer.objectData )
         self.currentIter += 1
 
     def run( self, graphicUpdate=False ):
@@ -104,6 +104,7 @@ class Reconstructor( object ):
             plt.ion()
             fig = plt.figure()
         while ( not finished ):
+
             for i in range(0,10):
                 self.step( self.hybrid )
                 if ( graphicUpdate ):
@@ -115,17 +116,19 @@ class Reconstructor( object ):
                     break
             if ( finished ):
                 break
-
             """
             for i in range(0,10):
-                self.step( self.signflip )
+                self.step( self.signflip)
+                if ( graphicUpdate ):
+                    self.plotCurrent(fig=fig)
+                    plt.draw()
+                    plt.pause(0.01)
                 if ( self.currentIter >= self.maxIter ):
                     finished=True
                     break
             if ( finished ):
                 break
             """
-
 
         for i in range(0,self.nIterAtEndWithFixed):
             self.step( self.fixed )
@@ -154,12 +157,12 @@ class Reconstructor( object ):
             fig = plt.figure()
         ax1 = fig.add_subplot(1,3,1)
         com = ndimage.measurements.center_of_mass(data)
-        ax1.imshow( data[int(com[0]),:,:], cmap="inferno", interpolation="none")
+        ax1.imshow( data[int(com[0]),:,:], cmap="bone", interpolation="none")
         ax2 = fig.add_subplot(1,3,2)
-        ax2.imshow( data[:,int(com[1]),:], cmap="inferno", interpolation="none")
+        ax2.imshow( data[:,int(com[1]),:], cmap="bone", interpolation="none")
 
         ax3 = fig.add_subplot(1,3,3)
-        im = ax3.imshow( data[:,:,int(com[2])], cmap="inferno", interpolation="none")
+        im = ax3.imshow( data[:,:,int(com[2])], cmap="bone", interpolation="none")
         #fig.colorbar(im)
         return fig
 
@@ -167,9 +170,22 @@ class Reconstructor( object ):
         fig = plt.figure()
         ax1 = fig.add_subplot(1,3,1)
         com = ndimage.measurements.center_of_mass(np.abs(self.transformer.scatteredData))
-        ax1.imshow( np.abs(self.transformer.scatteredData[int(com[0]),:,:]), cmap="inferno", interpolation="none", norm=mpl.colors.LogNorm())
+        im = ax1.imshow( np.abs(self.transformer.scatteredData[0,:,:]), cmap="inferno", interpolation="none", norm=mpl.colors.LogNorm())
+        fig.colorbar(im)
         ax2 = fig.add_subplot(1,3,2)
-        ax2.imshow( np.abs(self.transformer.scatteredData[:,int(com[1]),:]), cmap="inferno", interpolation="none", norm=mpl.colors.LogNorm())
+        im = ax2.imshow( np.abs(self.transformer.scatteredData[:,0,:]), cmap="inferno", interpolation="none", norm=mpl.colors.LogNorm())
+        fig.colorbar(im)
 
         ax3 = fig.add_subplot(1,3,3)
-        ax3.imshow( np.abs(self.transformer.scatteredData[:,:,int(com[2])]), cmap="inferno", interpolation="none", norm=mpl.colors.LogNorm())
+        im = ax3.imshow( np.abs(self.transformer.scatteredData[:,:,0]), cmap="inferno", interpolation="none", norm=mpl.colors.LogNorm())
+        fig.colorbar(im)
+
+    def save( self, fname="reconstruction.raw" ):
+        # Convert to uint8
+        data = np.abs( self.transformer.objectData )
+        maxval = np.max( data )
+        data *= (255.0/maxval)
+        data = data.astype(np.uint8)
+        data = data.T
+        data.tofile( fname )
+        print ("Data stored to %s"%(fname))

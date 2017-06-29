@@ -115,3 +115,30 @@ def modulus( dataIn, dataOut ):
     for i in prange(size, nogil=True, schedule="static", num_threads=nproc ):
         dataOutR[i] = cabs(dataInR[i])
     return dataOut
+
+@ct.boundscheck(False)
+@ct.wraparound(False)
+def mean( data ):
+    cdef np.ndarray[np.float64_t] dataR = data.ravel()
+    cdef int i
+    cdef int size = data.size
+    cdef np.ndarray[np.float64_t] totSum = regNP.zeros(nproc)
+    for i in prange(size, nogil=True, schedule="static", num_threads=nproc ):
+        totSum[parallel.threadid()] = totSum[parallel.threadid()] + dataR[i]
+    return regNP.sum(totSum)/size
+
+@ct.boundscheck(False)
+@ct.wraparound(False)
+def meanWithMask( data, mask ):
+    assert( data.size == mask.size )
+    cdef np.ndarray[np.float64_t] dataR = data.ravel()
+    cdef np.ndarray[np.uint8_t] maskR = mask.ravel()
+    cdef int i
+    cdef int size = data.size
+    cdef np.ndarray[np.float64_t] totSum = regNP.zeros(nproc)
+    cdef np.ndarray[np.float64_t] counter = regNP.zeros(nproc)
+    for i in prange(size, nogil=True, schedule="static", num_threads=nproc ):
+        if ( maskR[i] == 1 ):
+            totSum[parallel.threadid()] = totSum[parallel.threadid()] + dataR[i]
+            counter[parallel.threadid()] = counter[parallel.threadid()] + 1
+    return regNP.sum(totSum)/regNP.sum(counter)

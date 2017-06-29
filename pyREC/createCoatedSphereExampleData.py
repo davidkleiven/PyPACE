@@ -8,13 +8,13 @@ from matplotlib import pyplot as plt
 
 def main():
     #kspace = np.zeros((512,512,512))
-    au = 4.9E-5
+    au = 8.5E-6
     pmma = 8.5E-6
     N = 128
     delta = np.zeros((N,N,N))
     shape = delta.shape
-    Rau = 32
-    Rpmma = 28
+    Rau = 20
+    Rpmma = 20
     del delta
     x = np.linspace(-N/2,N/2,shape[0])
     y = np.linspace(-N/2,N/2,shape[1])
@@ -39,6 +39,7 @@ def main():
     plt.imshow(ff, norm=mpl.colors.LogNorm(), interpolation="none", cmap="inferno")
     plt.figure(2)
     plt.imshow(proj, interpolation="none", cmap="inferno")
+    plt.colorbar()
     plt.show()
     ff = ff[:,N/2]
 
