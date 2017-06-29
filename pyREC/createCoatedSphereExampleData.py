@@ -57,7 +57,11 @@ def main():
                 kz = k-N/2
                 kr = np.sqrt(kx**2 + ky**2+kz**2)
                 if ( kr < N/2 ):
-                    kspace[i,j,k] = ff[N/2+int(kr)]
+                    if ( int(kr) < N/2-1 ):
+                        weight = kr-int(kr)
+                        kspace[i,j,k] = ff[N/2+int(kr)+1]*weight + (1.0-weight)*ff[N/2+int(kr)]
+                    else:
+                        kspace[i,j,k] = ff[N/2+int(kr)]
                     if ( kspace[i,j,k] < minval ):
                         minval = kspace[i,j,k]
     kspace[kspace<minval] = minval
