@@ -43,7 +43,7 @@ class Reconstructor( object ):
         self.phasesAreInitialized = False
         self.supportInitialized = False
         self.isFirstIteration = True
-        self.updateSupportEvery = 2000
+        self.updateSupportEvery = 20
 
     def initScatteredDataWithRandomPhase( self ):
         shape = self.transformer.scatteredData.shape

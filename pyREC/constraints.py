@@ -3,8 +3,6 @@ sys.path.append(".")
 import numpy as np
 import supports as sup
 import cytParallel as cytp
-import matplotlib as mpl
-from matplotlib import pyplot as plt
 
 class FourierConstraint:
     def __init__( self, measuredScat ):
