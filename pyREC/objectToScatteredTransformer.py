@@ -79,5 +79,4 @@ class FirstBorn( Object2ScatteredTransformer ):
             self.objectData = np.fft.ifftn( self.scatteredData, norm="ortho" )
         else:
             self.objectData[:,:,:] = self.fftB( normalise_idft=False, ortho=True )
-        self.objectData.imag = 0.0
         return self.objectData

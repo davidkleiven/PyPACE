@@ -155,14 +155,26 @@ class Reconstructor( object ):
     def plot2DSlices( self, data, fig=None ):
         if ( fig is None ):
             fig = plt.figure()
-        ax1 = fig.add_subplot(1,3,1)
+        ax1 = fig.add_subplot(2,3,1)
         com = ndimage.measurements.center_of_mass(data)
-        ax1.imshow( data[int(com[0]),:,:], cmap="bone", interpolation="none")
-        ax2 = fig.add_subplot(1,3,2)
-        ax2.imshow( data[:,int(com[1]),:], cmap="bone", interpolation="none")
+        N = data.shape[0]
+        start = int(N/4)
+        end = int(3*N/4)
+        ax1.imshow( data[int(com[0]),start:end,start:end], cmap="bone", interpolation="none")
+        ax2 = fig.add_subplot(2,3,2)
+        ax2.imshow( data[start:end,int(com[1]),start:end], cmap="bone", interpolation="none")
 
-        ax3 = fig.add_subplot(1,3,3)
-        im = ax3.imshow( data[:,:,int(com[2])], cmap="bone", interpolation="none")
+        ax3 = fig.add_subplot(2,3,3)
+        im = ax3.imshow( data[start:end,start:end,int(com[2])], cmap="bone", interpolation="none")
+
+        ax4 = fig.add_subplot(2,3,4)
+        ax4.imshow( self.mask[int(com[0]),start:end,start:end], cmap="bone", interpolation="none")
+
+        ax5 = fig.add_subplot(2,3,5)
+        ax5.imshow( self.mask[start:end,int(com[1]),start:end], cmap="bone", interpolation="none")
+
+        ax6 = fig.add_subplot(2,3,6)
+        ax6.imshow( self.mask[start:end,start:end,int(com[2])], cmap="bone", interpolation="none")
         #fig.colorbar(im)
         return fig
 

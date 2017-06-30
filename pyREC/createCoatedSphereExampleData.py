@@ -13,8 +13,8 @@ def main():
     N = 128
     delta = np.zeros((N,N,N))
     shape = delta.shape
-    Rau = 20
-    Rpmma = 20
+    Rau = 10
+    Rpmma = 10
     del delta
     x = np.linspace(-N/2,N/2,shape[0])
     y = np.linspace(-N/2,N/2,shape[1])

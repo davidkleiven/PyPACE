@@ -103,3 +103,7 @@ ENV/
 # Additional added
 data/*
 bestIndividuals.csv
+*.png
+*.raw
+*.npy
+pyREC/cythonOpenMP.c
