@@ -20,12 +20,14 @@ import pickle as pck
 class DensityCorrector(object):
     def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None, debug=False ):
         self.reconstructed = np.load( reconstructedFname ).astype(np.float64)
-        self.kspace = np.load( kspaceFname )
+        self.kspace = np.load( kspaceFname ).astype(np.float64)
         self.kspaceIntegral = self.kspace.sum()
         self.segmentor = seg.Segmentor(self.reconstructed, comm)
         self.qweight = qw.Qweight( self.kspace )
         self.projector = pa.ProjectionPropagator( self.reconstructed, wavelength, voxelsize, kspaceDim=self.kspace.shape[0] )
         self.newKspace = None
+        self.wavelength = wavelength
+        self.voxelsize = voxelsize
         self.optimalRotationAngleDeg = 0
         self.hasOptimizedRotation = False
         self.comm = comm
@@ -123,6 +125,18 @@ class DensityCorrector(object):
         """
         self.mask = np.zeros(self.kspace.shape, dtype=np.uint8 )
         self.mask[self.kspace > 10.0*self.kspace.min()] = 1
+
+    def plotMask( self, fig=None ):
+        if ( fig is None ):
+            fig = plt.figure()
+        center = int( self.mask.shape[0]/2 )
+        ax1 = fig.add_subplot(1,3,1)
+        ax1.imshow( self.mask[center,:,:], cmap="bone", interpolation="none" )
+        ax2 = fig.add_subplot(1,3,2)
+        ax2.imshow( self.mask[:,center,:], cmap="bone", interpolation="none" )
+        ax3 = fig.add_subplot(1,3,3)
+        ax3.imshow( self.mask[:,:,center], cmap="bone", interpolation="none" )
+        return fig
 
     def getMeanSqError( self, angle ):
         """

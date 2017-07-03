@@ -287,10 +287,50 @@ static PyObject* performQWeighting( PyObject* self, PyObject *args )
   return npData;
 }
 
+/**
+* This function modifies the input array by dividing by the qWeight
+* Arguments:
+*   data - Numpy array containing the 2D data to be modified
+*   prefactor - The prefactor from a radial power law fit to the data
+*   exponent - The exponent froma radial power law fit to the data
+*/
+static PyObject* performQWeighting2D( PyObject* self, PyObject *args )
+{
+  PyObject *data = NULL;
+  double prefactor = 0.0;
+  double exponent = 0.0;
+  if ( !PyArg_ParseTuple(args, "Odd", &data, &prefactor, &exponent) )
+  {
+    PyErr_SetString( PyExc_TypeError, "The function performQWeighting2D needs a 2D numpy array, prefactor and exponent as arguments");
+    return NULL;
+  }
+
+  PyObject* npData = PyArray_FROM_OTF( data, NPY_DOUBLE, NPY_ARRAY_INOUT_ARRAY );
+  int nd = PyArray_NDIM(npData);
+  npy_intp* dims = PyArray_DIMS(npData);
+  if ( nd != 2 )
+  {
+    PyErr_SetString( PyExc_ValueError, "The numpy array has to have 2 dimensions");
+    return NULL;
+  }
+
+  for ( int ix=0;ix<dims[0];ix++ )
+  for ( int iy=0;iy<dims[1];iy++ )
+  {
+    double *currentVal = (double *) PyArray_GETPTR2(npData,ix,iy);
+    double x = ix-dims[0]/2;
+    double y = iy-dims[1]/2;
+    double z = 0.0;
+    *currentVal = (*currentVal)/qWeight(x,y,z,prefactor,exponent);
+  }
+  return npData;
+}
+
 static PyMethodDef categorizeMethods[] = {
   {"categorize", categorize, METH_VARARGS, "Cluster data based on the closest mean. Arguments: Segmentor object"},
   {"radialMean", radialMean, METH_VARARGS, "Perform radial averaging on a 3D array. Arguments: 3D numpy array with data, number of bins"},
   {"performQWeighting", performQWeighting, METH_VARARGS, "Perform Q weighting on a 3D numpy array"},
+  {"performQWeighting2D", performQWeighting2D, METH_VARARGS, "Perform Q weighting on a 2D numpy array"},
   {NULL,NULL,0,NULL}
 };
 

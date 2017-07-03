@@ -18,9 +18,13 @@ class Qweight(object):
     def weightData( self, data ):
         if ( not self.weightsAreComputed ):
             raise RuntimeError("Power law fit has not been performed")
-        if ( len(self.data.shape) != 3 ):
-            raise TypeError("The data array passed has to have 3 dimensions")
-        return catg.performQWeighting( data, np.exp(self.interscept), self.slope )
+
+        if ( len(data.shape) == 3 ):
+            return catg.performQWeighting( data, np.exp(self.interscept), self.slope )
+        elif ( len(data.shape) == 2 ):
+            return catg.performQWeighting2D( data, np.exp(self.interscept), self.slope )
+        else:
+            raise TypeError("Data has to be numpy array of dimension 2 or 3")
 
     def compute( self, showPlot=False ):
         # Perform a radial average

@@ -2,6 +2,9 @@ import sys
 sys.path.append( "./" )
 import numpy as np
 import categorize as catg
+import pypaceCython as pcmp
+import multiprocessing as mp
+from matplotlib import pyplot as plt
 
 class Segmentor(object):
     def __init__( self, data, comm=None ):
@@ -9,6 +12,7 @@ class Segmentor(object):
         self.means = None
         self.clusters = np.zeros( self.data.shape, dtype=np.uint8 )
         self.comm = comm
+        self.projectedClusters = []
 
     def _clusterID( self, newvalue ):
         return np.argmin( np.abs(newvalue-means) )
@@ -40,3 +44,54 @@ class Segmentor(object):
         data = np.zeros(self.data.shape)
         data[self.clusters==clusterIndx] = 1
         return data
+
+    def projectClusters( self, axis=2 ):
+        """
+        Perform azimuthal average of all the clusters
+        """
+        self.projectedClusters = []
+        mpArgs = []
+        for clusterID in range(len(self.means)):
+            proj = ProjectedCluster(clusterID)
+            proj.project( self.clusters, axis )
+            self.projectedClusters.append(proj)
+            #mpArgs.append([proj,axis])
+
+        #workers = mp.Pool( processes=mp.cpu_count() )
+        #workers.map( self._projParallel, mpArgs )
+
+    def _projParallel( self, args ):
+        args[0].project( self.clusters, axis=args[1] )
+
+    def plotAllSlices( self ):
+        if ( len(self.projectedClusters) == 0 ):
+            print ("There are no clusters. Have the 3D matrix been reconstructed yet?")
+        for i in range(len(self.projectedClusters)):
+            fig = self.projectedClusters[i].plot()
+            fig.savefig("figures/azm%d.png"%(i))
+
+
+class ProjectedCluster( object ):
+    def __init__( self, id ):
+        self.density = None
+        self.id = id
+
+    def project( self, clusters, axis=2 ):
+        """
+        Performs azimuthal average when rotating around the axis specified by the axis argument
+        """
+        assert( clusters.shape[0] == clusters.shape[1] )
+        assert( clusters.shape[0] == clusters.shape[2] )
+        N = clusters.shape[0]
+        self.density = np.zeros( (N,N), dtype=np.uint8 )
+        self.density = pcmp.projectCluster( clusters, self.id, self.density, axis )
+
+    def plot( self, fig=None ):
+        """
+        Plot the azimuthally averaged domain
+        """
+        if ( fig is None ):
+            fig = plt.figure()
+        ax = fig.add_subplot( 1,1,1 )
+        ax.imshow( self.density, cmap="bone", interpolation="none" )
+        return fig
