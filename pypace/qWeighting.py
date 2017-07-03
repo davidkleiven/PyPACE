@@ -1,4 +1,8 @@
 import categorize as ctg
+import config
+import matplotlib as mpl
+if ( not config.enableShow ):
+    mpl.use("Agg")
 from matplotlib import pyplot as plt
 from scipy import stats
 import numpy as np
@@ -9,6 +13,14 @@ class Qweight(object):
         self.data = kspaceData
         self.interscept = 1.0
         self.slope = 0.0
+        self.weightsAreComputed = False
+
+    def weightData( self, data ):
+        if ( not self.weightsAreComputed ):
+            raise RuntimeError("Power law fit has not been performed")
+        if ( len(self.data.shape) != 3 ):
+            raise TypeError("The data array passed has to have 3 dimensions")
+        return catg.performQWeighting( data, np.exp(self.interscept), self.slope )
 
     def compute( self, showPlot=False ):
         # Perform a radial average
@@ -23,9 +35,11 @@ class Qweight(object):
         # Filter out very small values
         rbins = rbins[radialMean > 1E-6*radialMean.max()]
         radialMean = radialMean[radialMean > 1E-6*radialMean.max()]
+        dr = rbins[1]-rbins[0]
+        rbins += dr/2.0
 
         self.slope, self.interscept, rvalue, pvalue, stderr = stats.linregress( np.log(rbins), np.log(radialMean) )
-        print (self.slope, self.interscept)
+        self.weightsAreComputed = True
 
         if ( showPlot ):
             fig = plt.figure()
@@ -36,6 +50,7 @@ class Qweight(object):
 
             ax2 = fig.add_subplot(1,2,2)
             ax2.plot( rbins, radialMean/self.getWeight(rbins), color="black")
+            plt.show()
 
     def getWeight( self, q ):
         """

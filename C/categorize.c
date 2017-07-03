@@ -5,6 +5,13 @@
 
 typedef unsigned char uint8;
 
+/**
+* This function returns the ID of the cluster with a mean closest to the value given
+* Args:
+*   means - array with the mean of all clusters
+*   size - length of the means array
+*   newvalue - the value of which its ID is requested
+*/
 uint8 getClusterID( double means[], int size, double newvalue )
 {
   double min = 1E30;
@@ -20,6 +27,11 @@ uint8 getClusterID( double means[], int size, double newvalue )
   return id;
 }
 
+/**
+* Put all the data in a category/clusters using the k-means algorithm
+* Arguments:
+*   obj - An instance of the segmentor class
+*/
 static PyObject* categorize( PyObject *self, PyObject *obj )
 {
   #ifdef DEBUG
@@ -151,6 +163,15 @@ static PyObject* categorize( PyObject *self, PyObject *obj )
   Py_RETURN_FALSE;
 }
 
+/**
+* This function perform radial averaging over a 3D matrix
+* r = 0 is taken to be the center
+* Arguments:
+*   3D numpy array containing the data to be averaged
+*   Nbins - the number of radial bins to use
+* Returns:
+*   Returns a numpy array with the radial binned data
+*/
 static PyObject* radialMean( PyObject* self, PyObject *args )
 {
   PyObject *data = NULL;
@@ -158,7 +179,7 @@ static PyObject* radialMean( PyObject* self, PyObject *args )
 
   if ( !PyArg_ParseTuple( args, "Oi", &data, &Nbins ) )
   {
-    PyErr_SetString( PyExc_TypeError, "Wrong argument types in fucntion radialMean" );
+    PyErr_SetString( PyExc_TypeError, "Wrong argument types in function radialMean" );
     return NULL;
   }
 
@@ -213,23 +234,87 @@ static PyObject* radialMean( PyObject* self, PyObject *args )
   return result;
 }
 
+/**
+* Returns the weighting factor that makes the 3D scattering pattern smoother
+* Arguments:
+*   ix,iy,iz - The indices in the 3D array
+*   prefactor - The prefactor in the power law fit
+*   exponent - The exponent in the power law fit
+*/
+double qWeight( double ix, double iy, double iz, double prefactor, double exponent )
+{
+  double q = sqrt(ix*ix+iy*iy+iz*iz);
+  return prefactor*pow(q,exponent);
+}
+
+/**
+* This function modifies the input array by dividing by the qWeight
+* Arguments:
+*   data - Numpy array containing the 3D data to be modified
+*   prefactor - The prefactor from a radial power law fit to the data
+*   exponent - The exponent froma radial power law fit to the data
+*/
+static PyObject* performQWeighting( PyObject* self, PyObject *args )
+{
+  PyObject *data = NULL;
+  double prefactor = 0.0;
+  double exponent = 0.0;
+  if ( !PyArg_ParseTuple(args, "Odd", &data, &prefactor, &exponent) )
+  {
+    PyErr_SetString( PyExc_TypeError, "The function performQWeighting needs a 3D numpy array, prefactor and exponent as arguments");
+    return NULL;
+  }
+
+  PyObject* npData = PyArray_FROM_OTF( data, NPY_DOUBLE, NPY_ARRAY_INOUT_ARRAY );
+  int nd = PyArray_NDIM(npData);
+  npy_intp* dims = PyArray_DIMS(npData);
+  if ( nd != 3 )
+  {
+    PyErr_SetString( PyExc_ValueError, "The numpy array has to have 3 dimensions");
+    return NULL;
+  }
+
+  for ( int ix=0;ix<dims[0];ix++ )
+  for ( int iy=0;iy<dims[1];iy++ )
+  for ( int iz=0;iz<dims[2];iz++ )
+  {
+    double *currentVal = (double *) PyArray_GETPTR3(npData,ix,iy,iz);
+    double x = ix-dims[0]/2;
+    double y = iy-dims[1]/2;
+    double z = iz-dims[2]/2;
+    *currentVal = (*currentVal)/qWeight(x,y,z,prefactor,exponent);
+  }
+  return npData;
+}
+
 static PyMethodDef categorizeMethods[] = {
   {"categorize", categorize, METH_VARARGS, "Cluster data based on the closest mean. Arguments: Segmentor object"},
   {"radialMean", radialMean, METH_VARARGS, "Perform radial averaging on a 3D array. Arguments: 3D numpy array with data, number of bins"},
+  {"performQWeighting", performQWeighting, METH_VARARGS, "Perform Q weighting on a 3D numpy array"},
   {NULL,NULL,0,NULL}
 };
 
-static struct PyModuleDef categorizeModule = {
-  PyModuleDef_HEAD_INIT,
-  "categorize",
-  NULL, // TODO: Write documentation string here
-  -1,
-  categorizeMethods
-};
+#if PY_MAJOR_VERSION >= 3
+  static struct PyModuleDef categorizeModule = {
+    PyModuleDef_HEAD_INIT,
+    "categorize",
+    NULL, // TODO: Write documentation string here
+    -1,
+    categorizeMethods
+  };
+#endif
 
-PyMODINIT_FUNC PyInit_categorize(void)
-{
-  PyObject* module = PyModule_Create( &categorizeModule );
-  import_array();
-  return module;
-}
+#if PY_MAJOR_VERSION >= 3
+  PyMODINIT_FUNC PyInit_categorize(void)
+  {
+    PyObject* module = PyModule_Create( &categorizeModule );
+    import_array();
+    return module;
+  }
+#else
+  PyMODINIT_FUNC initcategorize(void)
+  {
+    Py_InitModule3( "categorize", categorizeMethods, "This the Python 2 version" );
+    import_array();
+  }
+#endif

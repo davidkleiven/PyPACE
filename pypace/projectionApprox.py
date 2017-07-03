@@ -1,9 +1,13 @@
-from __future__ import print_function
+from __future__ import print_function, division
+import config
 import numpy as np
 import copy
 from scipy.ndimage import interpolation as sciinterp
 import matplotlib as mpl
+if ( not config.enableShow ):
+    mpl.use("Agg")
 from matplotlib import pyplot as plt
+from mpi4py import MPI
 
 class MatrixBuilder3D:
     """
@@ -34,6 +38,7 @@ class MatrixBuilder3D:
             self.insert135to180( slice1, slice2, angleDeg, stepAngleDeg )
         else:
             print ("Specify an angle between 0 and 180")
+        #self.plot()
 
     def insert0to45( self, slice1, slice2, angleDeg, stepAngleDeg ):
         """
@@ -45,7 +50,17 @@ class MatrixBuilder3D:
             zmin = int(iy*np.tan(alpha))
             zmax = int(iy*np.tan(alpha+dalpha))+1
             for iz in range(zmin,zmax):
-                weight = (iz-zmin)/(zmax-zmin)
+                if ( iy == 0 ):
+                    angle = alpha
+                else:
+                    angle = np.arctan(iz/iy)
+
+                #weight = (iz-zmin)/(zmax-zmin)
+                weight = (angle-alpha)/dalpha
+                if ( weight > 1.0 ):
+                    weight = 1.0
+                elif ( weight < 0.0 ):
+                    weight = 0.0
                 radialIndx = int( self.dim/2 + np.sqrt(iy**2+iz**2) )
                 if ( radialIndx < self.dim ):
                     yIndx = int( self.dim/2 + iy )
@@ -68,7 +83,17 @@ class MatrixBuilder3D:
             ymin = int(iz*np.tan(beta))
             ymax = int(iz*np.tan(beta+dalpha))+1
             for iy in range(ymin,ymax):
-                weight = (iy-ymin)/(ymax-ymin)
+                if ( iz == 0 ):
+                    angle = beta
+                else:
+                    angle = np.arctan(iy/iz)
+                weight = (angle-beta)/dalpha
+                if ( weight > 1.0 ):
+                    weight = 1.0
+                elif ( weight < 0.0 ):
+                    weight = 0.0
+                assert( weight >= 0.0 and weight <= 1.0 )
+                #weight = (iy-ymin)/(ymax-ymin)
                 radialIndx = int( self.dim/2 + np.sqrt(iy**2+iz**2))
                 if ( radialIndx < self.dim ):
                     yIndx = int( self.dim/2 + iy )
@@ -91,7 +116,16 @@ class MatrixBuilder3D:
             ymax = int( -iz*np.tan(beta) )
             ymin = int( -iz*np.tan(beta+dalpha) )
             for iy in range(ymin,ymax):
-                weight = (iy-ymin)/(ymax-ymin)
+                if ( iz == 0 ):
+                    angle = beta+dalpha
+                else:
+                    angle = np.arctan(-iy/iz)
+                weight = ( beta+dalpha-angle )/dalpha
+                if ( weight > 1.0 ):
+                    weight = 1.0
+                elif ( weight < 0.0 ):
+                    weight = 0.0
+                #weight = (iy-ymin)/(ymax-ymin)
                 radialIndx = int( self.dim/2 + np.sqrt(iy**2+iz**2))
                 if ( radialIndx < self.dim ):
                     yIndx = int( self.dim/2 + iy )
@@ -114,7 +148,16 @@ class MatrixBuilder3D:
             zmin = int(iy*np.tan(beta-dalpha))
             zmax = int(iy*np.tan(beta))+1
             for iz in range(zmin,zmax):
-                weight = (iz-zmin)/(zmax-zmin)
+                if ( iy == 0 ):
+                    angle = beta-dalpha
+                else:
+                    angle = np.arctan(iz/iy)
+                weight = ( angle - beta+dalpha )/dalpha
+                if ( weight > 1.0 ):
+                    weight = 1.0
+                elif ( weight < 0.0 ):
+                    weight = 0.0
+                #weight = (iz-zmin)/(zmax-zmin)
                 radialIndx = int( self.dim/2 + np.sqrt(iy**2+iz**2))
                 if ( radialIndx < self.dim ):
                     yIndx = int( self.dim/2 - iy )
@@ -170,7 +213,7 @@ class ProjectionPropagator(object):
         rotDir = 1
         baseIter = 0
         for i in range( 0, len(angles)-1 ):
-            print (angles[i],angles[i+1])
+            #print (angles[i],angles[i+1])
 
             # Rotate the material around the x-axis
             self.delta = sciinterp.rotate(self.deltaBackup, angles[i+1], axes=(1,0), reshape=False )

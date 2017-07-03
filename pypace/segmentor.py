@@ -4,10 +4,11 @@ import numpy as np
 import categorize as catg
 
 class Segmentor(object):
-    def __init__( self, data ):
+    def __init__( self, data, comm=None ):
         self.data = data
         self.means = None
         self.clusters = np.zeros( self.data.shape, dtype=np.uint8 )
+        self.comm = comm
 
     def _clusterID( self, newvalue ):
         return np.argmin( np.abs(newvalue-means) )
@@ -20,7 +21,11 @@ class Segmentor(object):
         for i in range(maxIter):
             converged = catg.categorize( self )
             if ( converged ):
-                print ("K-means converged in %d iterations"%(i+1))
+                if ( self.comm is None ):
+                    print ("K-means converged in %d iterations"%(i+1))
+                else:
+                    if ( self.comm.Get_rank() == 0 ):
+                        print ("K-means converged in %d iterations"%(i+1))
                 return
         print ("Warning! Max number of iterations in the kmeans was reached")
 
