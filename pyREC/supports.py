@@ -6,7 +6,7 @@ import reconstructor as rec
 class Support( object ):
     def __init__( self, mask, fraction ):
         self.mask = mask
-        self.width = 5
+        self.width = 1
         self.decay = 0.01
         self.fraction = fraction
 

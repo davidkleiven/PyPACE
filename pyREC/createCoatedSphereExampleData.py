@@ -7,10 +7,10 @@ if ( not config.enableMPLShow ):
 from matplotlib import pyplot as plt
 
 def main():
-    #kspace = np.zeros((512,512,512))
+    use3DFT = True
     au = 8.5E-6
     pmma = 8.5E-6
-    N = 128
+    N =128
     delta = np.zeros((N,N,N))
     shape = delta.shape
     Rau = 10
@@ -31,7 +31,9 @@ def main():
     wavelength = 0.17
     k = 2.0*np.pi/wavelength
     proj = k*delta.sum(axis=2)
-    del delta, R
+    if ( not use3DFT ):
+        del delta
+    del R
     ff = np.fft.fft2( np.exp(1j*proj*dx)-1.0 )/N
     ff = np.abs( np.fft.fftshift(ff) )**2
 
@@ -45,27 +47,31 @@ def main():
 
     del proj
 
-    # Create the 3D far field pattern
-    kspace = np.zeros((N,N,N))
-    print ("Fill 3D matrix", end="\r")
-    minval = 1E7
-    for i in range(0,N):
-        print ("%d of %d"%(i,N))
-        kx = i-N/2
-        for j in range(0,N):
-            ky = j-N/2
-            for k in range(0,N):
-                kz = k-N/2
-                kr = np.sqrt(kx**2 + ky**2+kz**2)
-                if ( kr < N/2 ):
-                    if ( int(kr) < N/2-1 ):
-                        weight = kr-int(kr)
-                        kspace[i,j,k] = ff[N/2+int(kr)+1]*weight + (1.0-weight)*ff[N/2+int(kr)]
-                    else:
-                        kspace[i,j,k] = ff[N/2+int(kr)]
-                    if ( kspace[i,j,k] < minval ):
-                        minval = kspace[i,j,k]
-    kspace[kspace<minval] = minval
+    if ( use3DFT ):
+        kspace = np.abs( np.fft.fftn( delta, norm="ortho" ) )
+        kspace = np.fft.fftshift(kspace)
+    else:
+        # Create the 3D far field pattern
+        kspace = np.zeros((N,N,N))
+        print ("Fill 3D matrix", end="\r")
+        minval = 1E7
+        for i in range(0,N):
+            print ("%d of %d"%(i,N))
+            kx = i-N/2
+            for j in range(0,N):
+                ky = j-N/2
+                for k in range(0,N):
+                    kz = k-N/2
+                    kr = np.sqrt(kx**2 + ky**2+kz**2)
+                    if ( kr < N/2 ):
+                        if ( int(kr) < N/2-1 ):
+                            weight = kr-int(kr)
+                            kspace[i,j,k] = ff[N/2+int(kr)+1]*weight + (1.0-weight)*ff[N/2+int(kr)]
+                        else:
+                            kspace[i,j,k] = ff[N/2+int(kr)]
+                        if ( kspace[i,j,k] < minval ):
+                            minval = kspace[i,j,k]
+        kspace[kspace<minval] = minval
     plt.figure(3)
     plt.imshow(kspace[N/2,:,:], norm=mpl.colors.LogNorm(), interpolation="none", cmap="inferno")
     plt.figure(4)

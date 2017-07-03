@@ -12,18 +12,18 @@ import initialSupports as isup
 import cytParallel as cytp
 
 class Reconstructor( object ):
-    def __init__( self, obj2ScatTrans, fractionOfMeanThreshold, beta=0.9, maxIter=500, statusEvery=10,
+    def __init__( self, obj2ScatTrans, fractionOfMaxThreshold, beta=0.9, maxIter=500, statusEvery=10,
     nIterAtEndWithFixed=60 ):
         if ( not isinstance(obj2ScatTrans, otst.Object2ScatteredTransformer ) ):
             raise TypeError("Obj2ScatTrans has to of type Object2ScatteredTransformer ")
-        if ( fractionOfMeanThreshold < 0.0 or fractionOfMeanThreshold > 1.0 ):
+        if ( fractionOfMaxThreshold < 0.0 or fractionOfMaxThreshold > 1.0 ):
             raise ValueError("fractionOfMeanThreshold has to be in the range (0,1)")
 
         self.transformer = obj2ScatTrans
 
         # Define the supports to be used
         self.mask = np.zeros(self.transformer.objectData.shape, dtype=np.uint8 )
-        self.support = sup.Support( self.mask, 0.05 )
+        self.support = sup.Support( self.mask, fractionOfMaxThreshold )
 
         self.lastObject = np.zeros(self.transformer.objectData.shape)+1j*np.zeros(self.transformer.objectData.shape)
 
@@ -43,7 +43,7 @@ class Reconstructor( object ):
         self.phasesAreInitialized = False
         self.supportInitialized = False
         self.isFirstIteration = True
-        self.updateSupportEvery = 20
+        self.updateSupportEvery = 2000
 
     def initScatteredDataWithRandomPhase( self ):
         shape = self.transformer.scatteredData.shape
@@ -58,6 +58,12 @@ class Reconstructor( object ):
             raise TypeError("The shape of the initial support does not match the shape of the scattered data")
 
         self.transformer.objectData[:,:,:] = support.initial
+        self.mask[np.abs(self.transformer.objectData)>0.0] = 1
+
+        # Scale the object
+        #ftSum = np.sum( np.abs( self.transformer.scatteredData ) ) # Scattered data er FT squared
+        #objSum = np.sum( self.transformer.objectData**2 )
+        #self.transformer.objectData *= ftSum/objSum
 
     def printStatus( self ):
             print ("Iteration: %d, residual %.2E"%(self.currentIter, self.residuals[self.currentIter]))
@@ -104,7 +110,7 @@ class Reconstructor( object ):
             plt.ion()
             fig = plt.figure()
         while ( not finished ):
-
+            """
             for i in range(0,10):
                 self.step( self.hybrid )
                 if ( graphicUpdate ):
@@ -118,7 +124,7 @@ class Reconstructor( object ):
                 break
             """
             for i in range(0,10):
-                self.step( self.signflip)
+                self.step( self.fixed )
                 if ( graphicUpdate ):
                     self.plotCurrent(fig=fig)
                     plt.draw()
@@ -128,7 +134,7 @@ class Reconstructor( object ):
                     break
             if ( finished ):
                 break
-            """
+
 
         for i in range(0,self.nIterAtEndWithFixed):
             self.step( self.fixed )
@@ -177,6 +183,19 @@ class Reconstructor( object ):
         ax6.imshow( self.mask[start:end,start:end,int(com[2])], cmap="bone", interpolation="none")
         #fig.colorbar(im)
         return fig
+
+    def plot1DCuts( self, fig=None ):
+        if ( fig is None ):
+            fig = plt.figure()
+
+        data = np.abs( self.transformer.objectData )
+        com = ndimage.measurements.center_of_mass(data)
+        ax1 = fig.add_subplot(1,3,1)
+        ax1.plot(data[:,int(com[1]), int(com[2])])
+        ax2 = fig.add_subplot(1,3,2)
+        ax2.plot(data[int(com[0]), :, int(com[2])])
+        ax3 = fig.add_subplot(1,3,3)
+        ax3.plot(data[int(com[0]), int(com[1]),:])
 
     def plotFourierSlices( self ):
         fig = plt.figure()

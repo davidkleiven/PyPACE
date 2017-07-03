@@ -54,7 +54,7 @@ class Rytov( Object2ScatteredTransformer ):
         """
         # Convert back to phase
         self.scatteredData[:,:,:] = -1j*self.amplitude*np.log( 1.0 + self.scatteredData[:,:,:]/self.amplitude)
-        self.fftB( normalise_idft=False, ortho=True )
+        self.objectData [:,:,:] = self.fftB( normalise_idft=False, ortho=True )
         return self.objectData
 
 class FirstBorn( Object2ScatteredTransformer ):
@@ -63,7 +63,7 @@ class FirstBorn( Object2ScatteredTransformer ):
 
     def forward( self ):
         """
-        Transforms the obect space to scattered space
+        Transforms the object space to scattered space
         """
         if ( self.numpyFFT ):
             self.scatteredData = np.fft.fftn( self.objectData, norm="ortho" )

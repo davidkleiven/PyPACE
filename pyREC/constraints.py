@@ -29,10 +29,6 @@ class SignFlip( RealSpaceConstraint ):
         RealSpaceConstraint.__init__( self, support )
 
     def apply( self, data ):
-        #img = np.abs(data)
-        #perc = np.percentile(img,75)
-        #self.support.mask[img>perc] = 1
-        #self.support.mask[img<=perc] = 0
         data[self.support.mask==0] = -data[self.support.mask==0]
         return data
 
@@ -43,10 +39,6 @@ class Hybrid( RealSpaceConstraint ):
         self.lastObject = lastObject
 
     def apply( self, data ):
-        #mask = self.support.get(data)
-        #mask[data.real<0.0] = 0
-        #data[mask==0] = self.lastObject[mask==0] - self.beta*data[mask==0]
-        #data[mask==0] -= self.beta*self.lastObject[mask==0]
         cytp.applyHybridConstraint( data, self.support.mask, self.beta, self.lastObject )
         return data
 
