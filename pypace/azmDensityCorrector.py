@@ -95,7 +95,7 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         Fit the e-density parameters to the scattering pattern
         """
         self.segment( 6 )
-        self.segmentor.createSeparateClusterCenter( self.kspace.shape[0]/8 )
+        self.segmentor.createSeparateClusterCenter( self.kspace.shape[0]/16 )
         self.segmentor.projectClusters()
 
         if ( self.comm is None ):
