@@ -17,9 +17,12 @@ def main():
     dCorr.segmentor.projectClusters()
     dCorr.plotSliceKspace()
     dCorr.plotMask()
-    dCorr.saveAllSliceClusters()
-    plt.show()
-    #dCorr.fit( nClusters=6, maxDelta=1E-4 )
+    #dCorr.saveAllSliceClusters()
+    print ("Optimizing parameters")
+    dCorr.fit( nIter=2, nClusters=6, maxDelta=1E-4 )
+    dCorr.merge()
+    #dCorr.plotFit( optimum["x"] )
+    #plt.show()
 
 if __name__ == "__main__":
     main()
