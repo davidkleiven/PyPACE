@@ -137,6 +137,9 @@ class SliceDensityCorrector( dc.DensityCorrector ):
                 with h5.File(fname,'r') as hf:
                     for dsetname in hf.keys():
                         h5file.copy(hf.get(dsetname), group, name=dsetname)
+
+            # Store all the projected clusters
+            dset = h5file.create_dataset( "clusters", data=self.segmentor.clusters )
             h5file.close()
             print ("Data saved in %s"%(fname))
 
