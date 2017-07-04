@@ -33,6 +33,17 @@ class Segmentor(object):
                 return
         print ("Warning! Max number of iterations in the kmeans was reached")
 
+    def createSeparateClusterCenter( self, width ):
+        """
+        Extracts the center of the object and creates a separate cluster for it
+        """
+        maxID = len(self.means)
+        center = int( self.clusters.shape[0]/2 )
+        delta = int(width/2)
+        self.clusters[center-delta:center+delta,center-delta:center+delta,center-delta:center+delta] = maxID
+        self.means = np.append(self.means, self.means[-1] )
+        
+
     def replaceDataWithMeans( self ):
         """
         Replacte the data values with the mean of the cluster it belongs to
