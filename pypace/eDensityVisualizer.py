@@ -7,6 +7,7 @@ import segmentor as seg
 from matplotlib import pyplot as plt
 import categorize as catg
 from scipy import ndimage as ndimg
+from scipy import misc as msc
 
 class EDensityVisualizer( object ):
     def __init__( self, fname ):
@@ -66,14 +67,14 @@ class EDensityVisualizer( object ):
         mlab.pipeline.scalar_cut_plane( src, plane_orientation="y_axes", colormap="plasma" )
         mlab.pipeline.scalar_cut_plane( src, plane_orientation="z_axes", colormap="plasma" )
 
-    def plotCluster( self, id ):
+    def plotCluster( self, id, downsample=4 ):
         """
         Plot clusters
         """
         fig = mlab.figure(bgcolor=(0,0,0))
         mask = np.zeros(self.clusters.shape, dtype=np.uint8)
         mask[self.clusters==id] = 1
-        mask = mask[::4,::4,::4]
+        mask = mask[::downsample,::downsample,::downsample]
         src = mlab.pipeline.scalar_field(mask)
         vol = mlab.pipeline.volume( src )
         mlab.pipeline.threshold( vol, low=0.5 )
