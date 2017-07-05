@@ -11,7 +11,7 @@ def main():
     kspace = "data/NiAu_sample1_3D.npy"
     comm = MPI.COMM_WORLD
     dCorr = adc.SliceDensityCorrector( reconstruct, kspace, 0.17, 55.2, comm=comm, debug=False,
-    projectionAxis=2 )
+    projectionAxis=2, segmentation="shell" )
     dCorr.segment( 6 )
     #dCorr.segmentor.replaceDataWithMeans()
     dCorr.segmentor.projectClusters()
@@ -19,7 +19,7 @@ def main():
     dCorr.plotMask()
     #dCorr.saveAllSliceClusters()
     print ("Optimizing parameters")
-    dCorr.fit( nIter=2, nClusters=6, maxDelta=1E-4 )
+    dCorr.fit( nIter=1, nClusters=6, maxDelta=1E-4 )
     dCorr.merge()
     #dCorr.plotFit( optimum["x"] )
     #plt.show()

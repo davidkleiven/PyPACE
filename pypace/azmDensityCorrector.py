@@ -16,8 +16,9 @@ import datetime as dt
 
 class SliceDensityCorrector( dc.DensityCorrector ):
     def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None, debug=False,
-    projectionAxis=2 ):
-        dc.DensityCorrector.__init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=comm, debug=False )
+    projectionAxis=2, segmentation="voxels" ):
+        dc.DensityCorrector.__init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=comm, debug=False,
+        segmentation=segmentation )
 
         self.computeMask()
 

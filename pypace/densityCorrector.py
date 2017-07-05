@@ -8,6 +8,7 @@ mpl.rcParams["svg.fonttype"] = "none"
 mpl.rcParams["axes.unicode_minus"] = False
 from matplotlib import pyplot as plt
 import segmentor as seg
+import shellSegmentor as sseg
 import qWeighting as qw
 import projectionApprox as pa
 from scipy.ndimage import interpolation as sciinterp
@@ -18,11 +19,18 @@ import pickle as pck
 
 
 class DensityCorrector(object):
-    def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None, debug=False ):
+    def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None, debug=False,
+    segmentation="voxels" ):
         self.reconstructed = np.load( reconstructedFname ).astype(np.float64)
         self.kspace = np.load( kspaceFname ).astype(np.float64)
         self.kspaceIntegral = self.kspace.sum()
-        self.segmentor = seg.Segmentor(self.reconstructed, comm)
+
+        if ( segmentation=="voxels" ):
+            self.segmentor = seg.Segmentor(self.reconstructed, comm)
+        elif ( segmentation=="shell"):
+            self.segmentor = sseg.ShellSegmentor(self.reconstructed, comm)
+        else:
+            raise ValueError("seg has to be voxels or shell")
         self.qweight = qw.Qweight( self.kspace )
         self.projector = pa.ProjectionPropagator( self.reconstructed, wavelength, voxelsize, kspaceDim=self.kspace.shape[0] )
         self.newKspace = None
