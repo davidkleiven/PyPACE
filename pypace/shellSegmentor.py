@@ -1,6 +1,5 @@
 import numpy as np
 import segmentor as seg
-import kmeansCython as kmC
 import shellCategorize as kmS
 
 class ShellSegmentor( seg.Segmentor ):
