@@ -72,7 +72,6 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         ff = np.fft.fftshift(ff)
         ff = self.qweight.weightData( ff )
         ff *= self.kspaceSum/ff.sum()
-        #ff = ndimg.gaussian_filter( ff, self.blurSigma )
         return ff
 
     def residual( self, x ):
@@ -142,6 +141,8 @@ class SliceDensityCorrector( dc.DensityCorrector ):
 
             # Store all the projected clusters
             dset = h5file.create_dataset( "clusters", data=self.segmentor.clusters )
+            dset = h5file.create_dataset( "sliceK", data=self.sliceKspace )
+            dset = h5file.create_dataset( "mask", data=self.projMask )
             h5file.close()
             print ("Data saved in %s"%(fname))
 
