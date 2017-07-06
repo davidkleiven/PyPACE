@@ -1,6 +1,8 @@
 #include <Python.h>
 #include "shellKmeans.hpp"
+#include "shellPartitioning.hpp"
 #include <numpy/ndarrayobject.h>
+#include <algorithm>
 
 bool isSegmentorObject( PyObject *segmentor )
 {
@@ -61,8 +63,44 @@ static PyObject* categorize( PyObject *self, PyObject *obj )
   return Py_False;
 }
 
+static PyObject* avgShellStdDev( PyObject *self, PyObject *obj )
+{
+  PyObject *segmentor = NULL;
+  // Parse the argument
+  if ( !PyArg_ParseTuple( obj, "O", &segmentor) )
+  {
+    PyErr_SetString( PyExc_TypeError, "Could not parse the argmument" );
+    return NULL;
+  }
+
+  if ( not isSegmentorObject(segmentor) )
+  {
+    PyErr_SetString( PyExc_TypeError, "Argument segmentor does not satisfy the required attribues");
+    return NULL;
+  }
+
+  ShellPartitioner partitioner;
+  PyObject* npvalues = PyArray_FROM_OTF( PyObject_GetAttrString(segmentor,"data"), NPY_DOUBLE, NPY_ARRAY_INOUT_ARRAY );
+  npy_intp* dims = PyArray_DIMS(npvalues);
+  partitioner.data = static_cast<double*>( PyArray_GETPTR3(npvalues,0,0,0) );
+  partitioner.N = dims[0];
+
+  PyObject* npclust = PyArray_FROM_OTF( PyObject_GetAttrString(segmentor,"clusters"), NPY_UINT8, NPY_ARRAY_INOUT_ARRAY );
+  partitioner.clusters = static_cast<unsigned char*>( PyArray_GETPTR3(npclust,0,0,0) );
+
+  PyObject* npshellradii = PyArray_FROM_OTF( PyObject_GetAttrString(segmentor,"shellradii"), NPY_DOUBLE, NPY_ARRAY_INOUT_ARRAY );
+  partitioner.shellRadii = static_cast<double*>( PyArray_GETPTR1(npshellradii,0) );
+  npy_intp* shelldims = PyArray_DIMS(npshellradii);
+  partitioner.Nshells = shelldims[0];
+
+
+  double stddev = partitioner.getCombinedStandardDeviation();
+  return Py_BuildValue( "d", stddev );
+}
+
 static PyMethodDef categorizeMethods[] = {
   {"categorize", categorize, METH_VARARGS, "Cluster data based on the closest mean. Arguments: Segmentor object"},
+  {"avgShellStdDev", avgShellStdDev, METH_VARARGS, "Compute the normalized standard deviation of the values in each shell. Arguments: Segmentor object"},
   {NULL,NULL,0,NULL}
 };
 

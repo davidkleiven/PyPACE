@@ -5,6 +5,7 @@ import categorize as catg
 import pypaceCython as pcmp
 import multiprocessing as mp
 from matplotlib import pyplot as plt
+from mayavi import mlab
 
 class Segmentor(object):
     def __init__( self, data, comm=None ):
@@ -42,7 +43,7 @@ class Segmentor(object):
         delta = int(width/2)
         self.clusters[center-delta:center+delta,center-delta:center+delta,center-delta:center+delta] = maxID
         self.means = np.append(self.means, self.means[-1] )
-        
+
 
     def replaceDataWithMeans( self ):
         """
@@ -80,6 +81,17 @@ class Segmentor(object):
         for i in range(len(self.projectedClusters)):
             fig = self.projectedClusters[i].plot()
             fig.savefig("figures/azm%d.png"%(i))
+
+    def plotCluster( self, clusterID, downsample=4 ):
+        fig = mlab.figure( bgcolor=(0,0,0) )
+        mask = np.zeros( self.clusters.shape, dtype=np.uint8 )
+        mask[self.clusters==clusterID] = 1
+        mask = mask[::downsample,::downsample,::downsample]
+        if ( mask.max() != 1 ):
+            return
+        src = mlab.pipeline.scalar_field(mask)
+        vol = mlab.pipeline.volume( src )
+        mlab.pipeline.threshold( vol, low=0.5 )
 
 
 class ProjectedCluster( object ):

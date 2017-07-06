@@ -14,6 +14,9 @@ class Qweight(object):
         self.interscept = 1.0
         self.slope = 0.0
         self.weightsAreComputed = False
+        self.gaussianSlope = 0.0
+        self.gaussianInterscept = 0.0
+        self.gaussianFitted = False
 
     def weightData( self, data ):
         if ( not self.weightsAreComputed ):
@@ -28,13 +31,14 @@ class Qweight(object):
 
     def compute( self, showPlot=False ):
         # Perform a radial average
-        qxMax = self.data.shape[0]/2
-        qyMax = self.data.shape[1]/2
-        qzMax = self.data.shape[2]/2
-        rmax = np.sqrt( qxMax**2 + qyMax**2 + qzMax**2 )
-        Nbins = int( self.data.shape[0]/4 )
-        rbins = np.linspace(0.0, rmax, Nbins)
-        radialMean = catg.radialMean( self.data, Nbins )
+        #qxMax = self.data.shape[0]/2
+        #qyMax = self.data.shape[1]/2
+        #qzMax = self.data.shape[2]/2
+        #rmax = np.sqrt( qxMax**2 + qyMax**2 + qzMax**2 )
+        #Nbins = int( self.data.shape[0]/4 )
+        #rbins = np.linspace(0.0, rmax, Nbins)
+        rbins = self.getRadialBins()
+        radialMean = catg.radialMean( self.data, len(rbins) )
 
         # Filter out very small values
         rbins = rbins[radialMean > 1E-6*radialMean.max()]
@@ -61,3 +65,44 @@ class Qweight(object):
         Return the weighting factor
         """
         return np.exp(self.interscept)*q**self.slope
+
+    def getRadialBins( self ):
+        qxMax = self.data.shape[0]/2
+        qyMax = self.data.shape[1]/2
+        qzMax = self.data.shape[2]/2
+        rmax = np.sqrt( qxMax**2 + qyMax**2 + qzMax**2 )
+        Nbins = int( self.data.shape[0]/4 )
+        rbins = np.linspace(0.0, rmax, Nbins)
+        return rbins
+
+    def fitRadialGaussian( self, showPlot=True ):
+        """
+        Perform a Gaussian fit to radial averaged pattern
+        """
+        rbins = self.getRadialBins()
+        radialMean = catg.radialMean( self.data, len(rbins) )
+
+        rbins = rbins[radialMean > 1E-6*radialMean.max()]
+        radialMean = radialMean[radialMean > 1E-6*radialMean.max()]
+        dr = rbins[1]-rbins[0]
+        rbins += dr/2.0
+
+        self.gaussianSlope, self.gaussianInterscept, rvalue, pvalue, stderr = stats.linregress( rbins**2, np.log(radialMean) )
+        self.gaussianFitted = True
+
+    def radialGaussian( self, r ):
+        if ( not self.gaussianFitted ):
+            self.fitRadialGaussian( showplot=False )
+        return np.exp(self.gaussianInterscept)*np.exp(self.gaussianSlope*r**2)
+
+    def fillMissingDataWithGaussian( self, mask ):
+        self.fitRadialGaussian()
+        N = self.data.shape[0]
+        x = np.linspace(-N/2, N/2, N )
+        X,Y,Z = np.meshgrid( x,x,x )
+        R = np.sqrt(X**2 + Y**2 + Z**2 )
+        del X,Y,Z
+        gauss = self.radialGaussian(R)
+        del R
+        self.data[mask==0] = gauss[mask==0]
+        mask[:,:,:] = 1

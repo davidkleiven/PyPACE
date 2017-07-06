@@ -22,6 +22,10 @@ def main( argv ):
     dCorr.segmentor.projectClusters()
     dCorr.plotSliceKspace()
     dCorr.plotMask()
+
+    # Try to fill the missing data in the Fourier domain by a gaussian approximation
+    #dCorr.qweight.fillMissingDataWithGaussian( dCorr.mask )
+
     #dCorr.saveAllSliceClusters()
     print ("Optimizing parameters")
     dCorr.fit( nIter=nIter, nClusters=6, maxDelta=1E-4 )

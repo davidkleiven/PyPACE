@@ -156,7 +156,7 @@ class EDensityVisualizer( object ):
         if ( hasMeasuredAndSimulated ):
             diff = np.abs( self.sliceK - self.ff )
             if ( not self.mask is None ):
-                diff[mask==0] = np.nan
+                diff[self.mask==0] = np.nan
             ax3.imshow( diff, cmap="nipy_spectral", interpolation="none")
 
         ax4 = fig.add_subplot(2,3,4)
