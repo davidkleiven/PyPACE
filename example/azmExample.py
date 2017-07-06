@@ -16,7 +16,7 @@ def main( argv ):
     kspace = "data/NiAu_sample1_3D.npy"
     comm = MPI.COMM_WORLD
     dCorr = adc.SliceDensityCorrector( reconstruct, kspace, 0.17, 55.2, comm=comm, debug=False,
-    projectionAxis=2, segmentation="shell" )
+    projectionAxis=2, segmentation="voxels" )
     dCorr.segment( 6 )
     #dCorr.segmentor.replaceDataWithMeans()
     dCorr.segmentor.projectClusters()
