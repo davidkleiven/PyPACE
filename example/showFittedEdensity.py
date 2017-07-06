@@ -15,7 +15,7 @@ def main():
     reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
     rec = np.load(reconstruct)
     visualzier.plot1DAngles( [0,40,80,120,160], data=rec )
-    visualzier.plotCluster( 3 )
+    visualzier.plotFit()
     mlab.show()
     plt.show()
 

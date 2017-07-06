@@ -44,6 +44,8 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         self.blurSigma = 3
         #self.sliceKspace = ndimg.gaussian_filter( self.sliceKspace, self.blurSigma )
         self.kspaceSum = np.sum(self.sliceKspace)
+        self.bestFF = None
+        self.bestResidual = 1E30
 
     def plotSliceKspace( self, fig=None ):
         """
@@ -88,6 +90,9 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         #x0 = self.segmentor.means*maxDelta/np.max(self.segmentor.means)
         #x0 = x0[1:]
         optimum = opt.least_squares( self.residual, x0, bounds=(0.0,maxDelta) )
+
+        if ( optimum["cost"] < self.bestResidual ):
+            self.bestFF = self.buildKspace()
         return optimum
 
     def fit( self, nIter=1000, nClusters=6, maxDelta=1E-4 ):
@@ -95,7 +100,7 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         Fit the e-density parameters to the scattering pattern
         """
         self.segment( 6 )
-        self.segmentor.createSeparateClusterCenter( self.kspace.shape[0]/6 )
+        self.segmentor.createSeparateClusterCenter( self.kspace.shape[0]/8 )
         self.segmentor.projectClusters()
 
         if ( self.comm is None ):
@@ -141,8 +146,9 @@ class SliceDensityCorrector( dc.DensityCorrector ):
 
             # Store all the projected clusters
             dset = h5file.create_dataset( "clusters", data=self.segmentor.clusters )
-            dset = h5file.create_dataset( "sliceK", data=self.sliceKspace )
-            dset = h5file.create_dataset( "mask", data=self.projMask )
+            dsetK = h5file.create_dataset( "sliceK", data=self.sliceKspace )
+            dsetM = h5file.create_dataset( "mask", data=self.projMask )
+            dsetFF = h5file.create_dataset( "bestFarField", data=self.bestFF )
             h5file.close()
             print ("Data saved in %s"%(fname))
 

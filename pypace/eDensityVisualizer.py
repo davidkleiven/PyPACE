@@ -12,10 +12,20 @@ from scipy import misc as msc
 class EDensityVisualizer( object ):
     def __init__( self, fname ):
         self.fname = fname
+        self.ff = None
+        self.sliceK = None
+        self.mask = None
         with h5.File( fname, 'r' ) as hf:
             if ( not "clusters" in hf.keys() ):
                 raise RuntimeError("No dataset named clusters in the given hdf5 file")
             self.clusters = np.array( hf.get("clusters") )
+
+            if ( "bestFarField" in hf.keys() ):
+                self.ff = np.array( hf.get("bestFarField") )
+            if ( "sliceK" in hf.keys() ):
+                self.sliceK = np.array( hf.get("sliceK") )
+            if ( "mask" in hf.keys() ):
+                self.mask = np.array( hf.get("mask") )
 
         self.segdata = np.zeros(self.clusters.shape)
         self.segmentor = seg.Segmentor( self.segdata )
@@ -127,4 +137,39 @@ class EDensityVisualizer( object ):
             ax1.plot( lineData, color=colors[counter%len(colors)], label="%d"%(angle*180/np.pi))
             counter += 1
         ax1.legend(loc="best", frameon=False, labelspacing=0.05)
+        return fig
+
+    def plotFit( self ):
+        """
+        Compare the simulated and the measured scattering pattern
+        """
+        fig = plt.figure()
+        ax1 = fig.add_subplot(2,3,1)
+        if ( not self.sliceK is None ):
+            ax1.imshow( self.sliceK, cmap="nipy_spectral", interpolation="none" )
+        ax2 = fig.add_subplot(2,3,2)
+        if ( not self.ff is None ):
+            ax2.imshow( self.ff, cmap="nipy_spectral", interpolation="none")
+        ax3 = fig.add_subplot(2,3,3)
+
+        hasMeasuredAndSimulated = not self.sliceK is None and not self.ff is None
+        if ( hasMeasuredAndSimulated ):
+            diff = np.abs( self.sliceK - self.ff )
+            if ( not self.mask is None ):
+                diff[mask==0] = np.nan
+            ax3.imshow( diff, cmap="nipy_spectral", interpolation="none")
+
+        ax4 = fig.add_subplot(2,3,4)
+        center = int( self.sliceK.shape[0]/2 )
+        if ( hasMeasuredAndSimulated ):
+            ax4.plot( self.sliceK[:,center] )
+            ax4.plot( self.ff[:,center] )
+
+        ax5 = fig.add_subplot(2,3,5)
+        if ( hasMeasuredAndSimulated ):
+            ax5.plot( self.sliceK[center,:] )
+            ax5.plot( self.ff[center,:] )
+        ax6 = fig.add_subplot(2,3,6)
+        if ( not self.mask is None ):
+            ax6.imshow( self.mask, cmap="bone", interpolation="none" )
         return fig
