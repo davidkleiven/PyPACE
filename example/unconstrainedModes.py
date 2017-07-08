@@ -21,9 +21,14 @@ def main():
     kspace = "data/NiAu_sample1_3D.npy"
     scattered = np.load( kspace )
     realsp = np.load( reconstruct )
+    realspPadded = np.zeros(scattered.shape)
+    start = int( scattered.shape[0]/4 )
+    end = int( 3*scattered.shape[0]/4 )
 
     scattered = scattered[::16,::16,::16]
-    realsp = realsp[::16,::16,::16]
+    realspPadded[start:end,start:end,start:end] = realsp
+
+    realsp = realspPadded[::16,::16,::16]
     mask = np.zeros( scattered.shape, dtype=np.uint8 )
     mask[scattered>1E-6*scattered.max()] = 1
     support = np.zeros( realsp.shape, dtype=np.uint8 )
@@ -32,7 +37,8 @@ def main():
     plotSlices(support)
     plt.show()
 
-    constrained = cnstpow.ConstrainedPower( mask, support, Nbasis=4 )
+    constrained = cnstpow.ConstrainedPower( mask, support, Nbasis=7 )
+    #constrained.checkOrthogonality()
     constrained.solve()
     constrained.plotEigenvalues()
     plt.show()

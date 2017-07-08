@@ -8,8 +8,14 @@ module3 = Extension( "shellCategorize", sources=["C/shellKmeans.cpp", "C/shellPa
 language="c++", libraries=["m"], extra_compile_args=["-O3", "-fPIC", "-ffast-math", "-march=native","-fopenmp"],
 extra_link_args=["-fopenmp", "-std=c++11"])
 
+module4 = Extension( "constrainedpowerc", sources=["C/constrainedPowerOperator.cpp", "C/hermiteOperatorMatrix.cpp",
+"C/trilinearInterpolator.cpp"], include_dirs=["C"], language="c++",
+extra_compile_args=["-O3", "-fPIC", "-ffast-math", "-march=native","-fopenmp","-std=c++11"],
+extra_link_args=["-fopenmp", "-std=c++11"]
+)
+
 setup(
     name = "pypace",
     cmdclass={"build_ext":build_ext},
-    ext_modules=[module1,module2,module3]
+    ext_modules=[module1,module2,module3,module4]
 )
