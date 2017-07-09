@@ -5,11 +5,18 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy import interpolate as interp
 import constrainedpowerc as cnstpow
+from scipy import ndimage as ndimg
+from scipy import sparse as sp
 
 class ConstrainedPower( object ):
     def __init__( self, mask, support, Nbasis=3 ):
+        if ( Nbasis > 49 ):
+            raise ValueError("According to the documentation on Hermite polynomials the integration routine has only been tested until 100."+
+            "Here we need an integration scheme of 2*Nbasis+1 and this number should not exceed 100")
+
         self.mask = mask
         self.support = support
+        self.recenter()
         self.scaleX, self.scaleY, self.scaleZ = self.computeScales()
         self.basis = cpb.Basis( self.scaleX, self.scaleY, self.scaleZ )
         self.Nbasis = Nbasis
@@ -22,8 +29,17 @@ class ConstrainedPower( object ):
         N = self.mask.shape[0]
         kx = np.linspace( -np.pi/2.0, np.pi/2.0, N )
         self.maskInterp = interp.RegularGridInterpolator( (kx,kx,kx), self.mask, fill_value=0, bounds_error=False )
-        self.integrationOrder = 20
+        self.integrationOrder = 2*self.Nbasis+1
         self.points, self.weights = np.polynomial.hermite.hermgauss( self.integrationOrder )
+
+    def recenter( self ):
+        com = np.array( ndimg.measurements.center_of_mass( self.support ) )
+        center = int(self.support.shape[0]/2)
+        self.support = ndimg.interpolation.shift( self.support, center-com )
+
+        com = np.array( ndimg.measurements.center_of_mass( self.mask ) )
+        center = int( self.mask.shape[0]/2 )
+        self.mask = ndimg.interpolation.shift( self.mask, center-com )
 
     def computeScales( self ):
         N = self.support.shape[0]
@@ -33,16 +49,40 @@ class ConstrainedPower( object ):
         X,Y,Z = np.meshgrid(x,y,z)
 
         sumD = self.support.sum()
-        scaleX = np.sqrt( np.sum( X**2 *self.support)/sumD )/2.0
-        scaleY = np.sqrt( np.sum( Y**2 *self.support)/sumD )/2.0
-        scaleZ = np.sqrt( np.sum( Z**2 *self.support)/sumD )/2.0
-        return scaleX, scaleY, scaleZ
+        scaleX = np.abs(X*self.support).max()
+        scaleY = np.abs(Y*self.support).max()
+        scaleZ = np.abs(Z*self.support).max()
+        scaleX = np.sqrt( np.sum( X**2*self.support )/sumD )
+        scaleY = np.sqrt( np.sum( Y**2*self.support )/sumD )
+        scaleZ = np.sqrt( np.sum( Z**2*self.support )/sumD )
+        del X,Y,Z
+        N = self.mask.shape[0]
+        kx = np.linspace( -np.pi, np.pi, N )
 
-    def flattenedToXYZ( self, flattened ):
+        # Focus on the central region
+        width = N/4
+        start = int( N/2-width/2 )
+        end = int( N/2+width/2 )
+        #kx = kx[start:end]
+        KX,KY,KZ = np.meshgrid(kx,kx,kx)
+
+        #scaleKx = np.abs( KX*(1-self.mask[start:end,start:end,start:end]) ).max()
+        #scaleKy = np.abs( KY*(1-self.mask[start:end,start:end,start:end]) ).max()
+        #scaleKz = np.abs( KZ*(1-self.mask[start:end,start:end,start:end]) ).max()
+        sumM = np.sum(1-self.mask)
+        scaleKx = np.sqrt( np.sum(KX**2 *(1-self.mask))/sumM )
+        scaleKy = np.sqrt( np.sum(KY**2 *(1-self.mask))/sumM)
+        scaleKz = np.sqrt( np.sum(KZ**2 *(1-self.mask))/sumM)
+        return np.sqrt(scaleX/scaleKx), np.sqrt(scaleY/scaleKy), np.sqrt(scaleZ/scaleKz)
+
+    def flattened2xyz( self, flattened ):
         iz = flattened%self.Nbasis
         iy = ( int( flattened/self.Nbasis )%self.Nbasis )
         ix = int( flattened/self.Nbasis**2 )
         return ix,iy,iz
+
+    def xyz2Flattened( self, x, y, z ):
+        return x*self.Nbasis**2 + y*self.Nbasis + z
 
     def integrate( self, n, m, weight="none" ):
         nx1, ny1, nz1 = self.flattenedToXYZ(n)
@@ -157,6 +197,71 @@ class ConstrainedPower( object ):
         print (np.sqrt( np.trace(np.conj(mat).T.dot(mat)) ))
         return mat
 
+    def createSparseList( self, bandwidth ):
+        basisList = []
+        for iz in range(-bandwidth,bandwidth):
+            for iy in range(-bandwidth,bandwidth):
+                if ( iz == 0 and iy == 0 ):
+                    for ix in range(0,bandwidth):
+                        basisList.append([ix,iy,iz])
+                else:
+                    for ix in range(-bandwidth,bandwidth):
+                        basisList.append([ix,iy,iz])
+        return basisList
+
+    def convertBasisListToFlattenedIndex( self, i, basisList ):
+        columns = []
+        ix,iy,iz = self.flattened2xyz(i)
+        for entry in basisList:
+            indx = self.xyz2Flattened( ix+entry[0], iy+entry[1], iz+entry[2] )
+            if ( indx < self.Nbasis**3 and indx >= i and not indx in columns ):
+                columns.append( indx )
+        return columns
+
+    def checkIfAlreadyExists( self, newrow, newcol, allrows, allcols ):
+        for i in range(len(allrows)):
+            if ( newrow == allrows[i] and newcol == allcols[i] ):
+                return True
+        return False
+
+    def buildMatrixSparse( self, bandwidth ):
+        print ("Building sparse matrix with bandwidth=%d"%(bandwidth))
+        if ( bandwidth > self.Nbasis ):
+            raise ValueError("The bandwidth has to be smaller or equal to the number of basis functions in each direction")
+
+        data = []
+        row = []
+        col = []
+        N = self.Nbasis**3
+        spList = self.createSparseList(bandwidth)
+        for i in range(N):
+            print ("Computing row %d of %d"%(i,self.Nbasis**3))
+            cols = self.convertBasisListToFlattenedIndex( i, spList )
+            for j in cols:
+                res = cnstpow.matrixElement( self, i, j )
+                data.append( res[0]+1j*res[1] )
+                row.append(i)
+                col.append(j)
+                if ( i != j ):
+                    data.append( res[0]-1j*res[1] )
+                    row.append(j)
+                    col.append(i)
+        # Creating a intermediate DOK matrix removes duplicates and using the last one
+        # https://stackoverflow.com/questions/28677162/ignoring-duplicate-entries-in-sparse-matrix
+        return sp.csc_matrix( (data,(row,col)) )
+
+    def runInnerSparseLoop( self, i, jval, data, row, col ):
+        for j in jval:
+            res = cnstpow.matrixElement( self, i, j )
+            data.append( res[0]+1j*res[1] )
+            row.append(i)
+            col.append(j)
+            if ( i != j ):
+                data.append( res[0]-1j*res[1] )
+                row.append(j)
+                col.append(i)
+
+
     def plotEigenvalues( self ):
         if ( self.eigval is None ):
             return None
@@ -165,10 +270,20 @@ class ConstrainedPower( object ):
         ax.plot(self.eigval)
         return fig
 
-    def solve( self ):
-        mat = self.buildMatrix()
-        plt.matshow(np.abs(mat))
-        plt.colorbar()
-        plt.show()
-        self.eigval, self.eigvec = np.linalg.eigh(mat)
+    def solve( self, mode="dense", bandwidth=1, plotMatrix=False, fracEigmodes=0.5 ):
+        if ( mode == "dense" ):
+            mat = self.buildMatrix()
+            plt.matshow(np.abs(mat))
+            plt.colorbar()
+            plt.show()
+            self.eigval, self.eigvec = np.linalg.eigh(mat)
+        elif ( mode == "sparse" ):
+            mat = self.buildMatrixSparse( bandwidth )
+            if ( plotMatrix ):
+                plt.matshow( np.abs(mat.todense()) )
+                plt.colorbar()
+                plt.show()
+            self.eigval, self.eigvec = sp.linalg.eigsh( mat, k=int(fracEigmodes*self.Nbasis**3), which="SM" )
+        else:
+            raise ValueError("Mode has to be either dense or sparse")
         return self.eigval, self.eigvec

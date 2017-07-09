@@ -17,6 +17,7 @@ def plotSlices( data ):
     return fig
 
 def main():
+    compareDenseSparse = False
     reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
     kspace = "data/NiAu_sample1_3D.npy"
     scattered = np.load( kspace )
@@ -33,13 +34,21 @@ def main():
     mask[scattered>1E-6*scattered.max()] = 1
     support = np.zeros( realsp.shape, dtype=np.uint8 )
     support[realsp>1E-6*realsp.max()] = 1
-    plotSlices(mask)
-    plotSlices(support)
+
+    constrained = cnstpow.ConstrainedPower( mask, support, Nbasis=15 )
+    plotSlices(constrained.mask)
+    plotSlices(constrained.support)
     plt.show()
 
-    constrained = cnstpow.ConstrainedPower( mask, support, Nbasis=7 )
     #constrained.checkOrthogonality()
-    constrained.solve()
+    if ( compareDenseSparse ):
+        eigval,eigvec = constrained.solve( mode="sparse", bandwidth=4, plotMatrix=True )
+        eigvalD,eigvecD = constrained.solve( mode="dense", plotMatrix=True )
+        plt.plot(eigval)
+        plt.plot(eigvalD)
+        plt.show()
+    else:
+        eigval,eigvec = constrained.solve( mode="sparse", bandwidth=4, plotMatrix=False, fracEigmodes=0.5 )
     constrained.plotEigenvalues()
     plt.show()
 
