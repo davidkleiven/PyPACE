@@ -43,5 +43,14 @@ class Basis( object ):
     def phiFourierZ( self, n, kz ):
         return self.phiFourier( n, kz, self.scaleZ )
 
+    def fourierWeight( self, kx, scale ):
+        return np.exp(-0.5*(kx*scale)**2 )
+
+    def fullFourierWeight( self, kx, ky, kz ):
+        return self.fourierWeight(kx,self.scaleX)*self.fourierWeight(ky,self.scaleY)*self.fourierWeight(kz,self.scaleZ)
+
     def evalFourier( self, kx, ky, kz, nx, ny, nz ):
         return self.phiFourierX( nx, kx )*self.phiFourierY( ny, ky )*self.phiFourierZ( nz, kz )
+
+    def evalFourierWithWeight( self, kx, ky, kz, nx, ny, nz ):
+        return self.evalFourier(kx,ky,kz,nx,ny,nz)*self.fullFourierWeight(kx,ky,kz)

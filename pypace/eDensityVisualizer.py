@@ -10,26 +10,28 @@ from scipy import ndimage as ndimg
 from scipy import misc as msc
 
 class EDensityVisualizer( object ):
-    def __init__( self, fname ):
+    def __init__( self, fname="" ):
         self.fname = fname
         self.ff = None
         self.sliceK = None
         self.mask = None
-        with h5.File( fname, 'r' ) as hf:
-            if ( not "clusters" in hf.keys() ):
-                raise RuntimeError("No dataset named clusters in the given hdf5 file")
-            self.clusters = np.array( hf.get("clusters") )
 
-            if ( "bestFarField" in hf.keys() ):
-                self.ff = np.array( hf.get("bestFarField") )
-            if ( "sliceK" in hf.keys() ):
-                self.sliceK = np.array( hf.get("sliceK") )
-            if ( "mask" in hf.keys() ):
-                self.mask = np.array( hf.get("mask") )
+        if ( fname != "" ):
+            with h5.File( fname, 'r' ) as hf:
+                if ( not "clusters" in hf.keys() ):
+                    raise RuntimeError("No dataset named clusters in the given hdf5 file")
+                self.clusters = np.array( hf.get("clusters") )
 
-        self.segdata = np.zeros(self.clusters.shape)
-        self.segmentor = seg.Segmentor( self.segdata )
-        self.segmentor.clusters = self.clusters
+                if ( "bestFarField" in hf.keys() ):
+                    self.ff = np.array( hf.get("bestFarField") )
+                if ( "sliceK" in hf.keys() ):
+                    self.sliceK = np.array( hf.get("sliceK") )
+                if ( "mask" in hf.keys() ):
+                    self.mask = np.array( hf.get("mask") )
+
+            self.segdata = np.zeros(self.clusters.shape)
+            self.segmentor = seg.Segmentor( self.segdata )
+            self.segmentor.clusters = self.clusters
 
     def getBest( self ):
         """
@@ -115,9 +117,9 @@ class EDensityVisualizer( object ):
             edensity = data
 
         N = edensity.shape[0]
-        x = np.linspace(-N/2, N/2, N )
-        y = np.linspace(-N/2, N/2, N)
-        xy = np.vstack((x,y))
+        x = np.linspace( -N/2, N/2, N )
+        y = np.linspace( -N/2, N/2, N )
+        xy = np.vstack( (x,y) )
         rotMatrix = np.eye(2)
         fig = plt.figure()
         ax1 = fig.add_subplot(1,1,1)

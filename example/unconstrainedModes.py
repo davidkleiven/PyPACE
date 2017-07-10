@@ -49,7 +49,7 @@ def main():
         plt.plot(eigvalD)
         plt.show()
     else:
-        eigval,eigvec = constrained.solve( mode="sparse", bandwidth=2, plotMatrix=False, fracEigmodes=0.1 )
+        eigval,eigvec = constrained.solve( mode="dense", bandwidth=2, plotMatrix=False, fracEigmodes=0.1 )
     constrained.plotEigenvalues()
     plt.show()
 

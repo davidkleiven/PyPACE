@@ -66,6 +66,8 @@ class ConstrainedPower( object ):
         start = int( N/2-width/2 )
         end = int( N/2+width/2 )
         #kx = kx[start:end]
+        #self.mask = self.mask[start:end,start:end,start:end]
+        #self.maskInterp = interp.RegularGridInterpolator( (kx,kx,kx), self.mask, fill_value=0, bounds_error=False )
         KX,KY,KZ = np.meshgrid(kx,kx,kx)
 
         #scaleKx = np.abs( KX*(1-self.mask[start:end,start:end,start:end]) ).max()
@@ -286,6 +288,21 @@ class ConstrainedPower( object ):
         else:
             raise ValueError("Mode has to be either dense or sparse")
         return self.eigval, self.eigvec
+
+    def getEigenModeReal( self, modeNum, x, y, z ):
+        mode = self.eigvec[0,modeNum]*self.basis.eval(x,y,z,0,0,0)
+        for i in range(1,self.eigvec.shape[0]):
+            nx,ny,nz = self.flattened2xyz( i )
+            mode += self.eigvec[i,modeNum]*self.basis.eval(x,y,z,nx,ny,nz)
+        return mode
+
+    def getEigenModeFourier( self, modeNum, kx, ky, kz ):
+        mode = self.eigvec[0,modeNum]*self.basis.evalFourierWithWeight(kx,ky,kz,0,0,0)
+        for i in range(1,self.eigvec.shape[0] ):
+            nx,ny,nz = self.flattened2xyz( i )
+            mode += self.eigvec[i,modeNum]*self.basis.evalFourierWithWeight(kx,ky,kz,nx,ny,nz)
+        return mode
+
 
 class MatrixOperator( object ):
     def __init__( self, row, cnstPower, Nbasis ):
