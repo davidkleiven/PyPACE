@@ -3,6 +3,7 @@ sys.path.append("pypace")
 import constrainedPower as cnstpow
 import numpy as np
 from matplotlib import pyplot as plt
+import pickle as pck
 
 def plotSlices( data ):
     assert( len(data.shape) == 3 )
@@ -35,22 +36,30 @@ def main():
     support = np.zeros( realsp.shape, dtype=np.uint8 )
     support[realsp>1E-6*realsp.max()] = 1
 
-    constrained = cnstpow.ConstrainedPower( mask, support, Nbasis=15 )
+    constrained = cnstpow.ConstrainedPower( mask, support, Nbasis=8 )
     plotSlices(constrained.mask)
     plotSlices(constrained.support)
     plt.show()
 
     #constrained.checkOrthogonality()
     if ( compareDenseSparse ):
-        eigval,eigvec = constrained.solve( mode="sparse", bandwidth=4, plotMatrix=True )
+        eigval,eigvec = constrained.solve( mode="sparse", bandwidth=6, plotMatrix=True )
         eigvalD,eigvecD = constrained.solve( mode="dense", plotMatrix=True )
         plt.plot(eigval)
         plt.plot(eigvalD)
         plt.show()
     else:
-        eigval,eigvec = constrained.solve( mode="sparse", bandwidth=4, plotMatrix=False, fracEigmodes=0.5 )
+        eigval,eigvec = constrained.solve( mode="sparse", bandwidth=2, plotMatrix=False, fracEigmodes=0.1 )
     constrained.plotEigenvalues()
     plt.show()
+
+    # Dump the results to a pickle file
+    fname = "data/uncsontrainedModes.pck"
+    out = open( fname, 'wb' )
+    pck.dump( constrained, out )
+    out.close()
+    print ("Object result written to %s"%(fname))
+
 
 if __name__ == "__main__":
     main()

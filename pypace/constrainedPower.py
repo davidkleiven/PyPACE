@@ -7,6 +7,8 @@ from scipy import interpolate as interp
 import constrainedpowerc as cnstpow
 from scipy import ndimage as ndimg
 from scipy import sparse as sp
+import multiprocessing as mp
+import itertools as itertls
 
 class ConstrainedPower( object ):
     def __init__( self, mask, support, Nbasis=3 ):
@@ -187,14 +189,12 @@ class ConstrainedPower( object ):
     def buildMatrix( self ):
         print ("Building matrix...")
         mat = np.zeros( (self.Nbasis**3,self.Nbasis**3) ) + 1j*np.zeros( (self.Nbasis**3,self.Nbasis**3) )
+        workers = mp.Pool( mp.cpu_count() )
+        parallelMat = [MatrixOperator(i,self,self.Nbasis) for i in range(self.Nbasis**3)]
+        rows = workers.map( innerLoopDense, parallelMat )
         for i in range(self.Nbasis**3):
-            print ("Computing row %d of %d"%(i,self.Nbasis**3))
-            for j in range(i,self.Nbasis**3):
-                res = cnstpow.matrixElement( self, i, j )
-                mat[i,j] = res[0]+1j*res[1]
-                #mat[i,j] = self.operatorElement(i,j)
-                mat[j,i] = np.conj(mat[i,j])
-        print (np.sqrt( np.trace(np.conj(mat).T.dot(mat)) ))
+            mat[i,i:] = rows[i]
+            mat[i:,i] = np.conj(rows[i])
         return mat
 
     def createSparseList( self, bandwidth ):
@@ -233,7 +233,16 @@ class ConstrainedPower( object ):
         row = []
         col = []
         N = self.Nbasis**3
-        spList = self.createSparseList(bandwidth)
+        spList = self.createSparseList( bandwidth )
+        """
+        parMat = [ MatrixOperatorSparse(i, self, spList) for i in range(N) ]
+        workers = mp.Pool( mp.cpu_count() )
+        result = workers.map( innerLoopSparse, parMat )
+        for pMat in result:
+            data += pMat.data
+            row += pMat.rows
+            col += pMat.cols
+        """
         for i in range(N):
             print ("Computing row %d of %d"%(i,self.Nbasis**3))
             cols = self.convertBasisListToFlattenedIndex( i, spList )
@@ -250,18 +259,6 @@ class ConstrainedPower( object ):
         # https://stackoverflow.com/questions/28677162/ignoring-duplicate-entries-in-sparse-matrix
         return sp.csc_matrix( (data,(row,col)) )
 
-    def runInnerSparseLoop( self, i, jval, data, row, col ):
-        for j in jval:
-            res = cnstpow.matrixElement( self, i, j )
-            data.append( res[0]+1j*res[1] )
-            row.append(i)
-            col.append(j)
-            if ( i != j ):
-                data.append( res[0]-1j*res[1] )
-                row.append(j)
-                col.append(i)
-
-
     def plotEigenvalues( self ):
         if ( self.eigval is None ):
             return None
@@ -276,6 +273,7 @@ class ConstrainedPower( object ):
             plt.matshow(np.abs(mat))
             plt.colorbar()
             plt.show()
+            print ("Solving eigensystem...")
             self.eigval, self.eigvec = np.linalg.eigh(mat)
         elif ( mode == "sparse" ):
             mat = self.buildMatrixSparse( bandwidth )
@@ -283,7 +281,49 @@ class ConstrainedPower( object ):
                 plt.matshow( np.abs(mat.todense()) )
                 plt.colorbar()
                 plt.show()
+            print ("Solving eigensystem...")
             self.eigval, self.eigvec = sp.linalg.eigsh( mat, k=int(fracEigmodes*self.Nbasis**3), which="SM" )
         else:
             raise ValueError("Mode has to be either dense or sparse")
         return self.eigval, self.eigvec
+
+class MatrixOperator( object ):
+    def __init__( self, row, cnstPower, Nbasis ):
+        self.row = row
+        self.rowval = np.zeros( Nbasis**3 - row, dtype=np.complex64 )
+        self.cnstPower = cnstPower
+        self.Nbasis = Nbasis
+
+class MatrixOperatorSparse( object ):
+    def __init__( self, row, cnstPower, spList ):
+        self.row = row
+        self.cnstPower = cnstPower
+        self.spList = spList
+        self.data = []
+        self.rows = []
+        self.cols = []
+
+def innerLoopDense( parMat ):
+    i = parMat.row
+    #mat = args[1]
+    for j in range(i,parMat.Nbasis**3):
+        res = cnstpow.matrixElement( parMat.cnstPower, i, j )
+        parMat.rowval[j-i] = res[0]+1j*res[1]
+    return parMat.rowval
+
+def innerLoopSparse( pMatSparse ):
+    if ( not isinstance(pMatSparse,MatrixOperatorSparse) ):
+        raise TypeError("Argument has to be of type MatrixOperatorSparse")
+
+    i = pMatSparse.row
+    jval = pMatSparse.cnstPower.convertBasisListToFlattenedIndex( pMatSparse.row, pMatSparse.spList )
+    for j in jval:
+        res = cnstpow.matrixElement( pMatSparse.cnstPower, i, j )
+        pMatSparse.data.append( res[0]+1j*res[1] )
+        pMatSparse.rows.append(i)
+        pMatSparse.cols.append(j)
+        if ( i != j ):
+            pMatSparse.data.append( res[0]-1j*res[1] )
+            pMatSparse.rows.append(j)
+            pMatSparse.cols.append(i)
+    return pMatSparse
