@@ -9,7 +9,7 @@ language="c++", libraries=["m"], extra_compile_args=["-O3", "-fPIC", "-ffast-mat
 extra_link_args=["-fopenmp", "-std=c++11"])
 
 module4 = Extension( "constrainedpowerc", sources=["C/constrainedPowerOperator.cpp", "C/hermiteOperatorMatrix.cpp",
-"C/trilinearInterpolator.cpp"], include_dirs=["C"], language="c++",
+"C/trilinearInterpolator.cpp", "C/constrainedOperator.cpp"], include_dirs=["C"], language="c++",
 extra_compile_args=["-O3", "-fPIC", "-ffast-math", "-march=native","-fopenmp","-std=c++11"],
 extra_link_args=["-fopenmp", "-std=c++11"]
 )

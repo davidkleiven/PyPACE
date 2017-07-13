@@ -3,8 +3,9 @@
 #include <vector>
 #include <memory>
 #include "trilinearInterpolator.hpp"
+#include "constrainedOperator.hpp"
 
-class HermiteOperatorMatrix
+class HermiteOperatorMatrix: public ConstrainedOperator
 {
 public:
 
@@ -24,9 +25,6 @@ public:
   HermiteOperatorMatrix( double *weights, double *points, unsigned int intorder, unsigned int nbasis, uint8_t *support,
   uint8_t *mask, int Nsup, int Nmask, double sizeX, double sizeY, double sizeZ, double voxelsize );
 
-  /** Convertes between the flattened index of the matrix to xyz indices */
-  void flattened2xyz( int flattened, int &ix, int &iy, int &iz ) const ;
-
   /** Evaluates the Hermite polynomials on all required points */
   void evalHermitte();
 
@@ -44,7 +42,6 @@ public:
 
   /** Compute one matrix element */
   void matrixElement( int n, int m, double &realPart, double &imagPart );
-
 private:
   std::vector< std::vector<double> > hermiteEval;
   double *matrixReal{nullptr};
@@ -52,11 +49,7 @@ private:
   double *weights{nullptr};
   double *points{nullptr};
   unsigned int integorder{0};
-  unsigned int nbasis{1};
-  uint8_t *support{nullptr};
-  uint8_t *mask{nullptr};
-  int Nsup{0};
-  int Nmask{0};
+
   // Scaling parameters in the different directions
   double scaleX{1.0};
   double scaleY{1.0};

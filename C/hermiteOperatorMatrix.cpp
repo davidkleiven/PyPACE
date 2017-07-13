@@ -8,8 +8,9 @@
 using namespace std;
 
 HermiteOperatorMatrix::HermiteOperatorMatrix( double *weights, double *points, unsigned int intorder, unsigned int nbasis, uint8_t *support,
-uint8_t *mask, int Nsup, int Nmask, double scaleX, double scaleY, double scaleZ, double voxelsize ):weights(weights), points(points),
-integorder(intorder), nbasis(nbasis), support(support), mask(mask), Nsup(Nsup), Nmask(Nmask), scaleX(scaleX), scaleY(scaleY),
+uint8_t *mask, int Nsup, int Nmask, double scaleX, double scaleY, double scaleZ, double voxelsize ):
+ConstrainedOperator(mask, support, Nsup, Nmask, nbasis), weights(weights), points(points),
+integorder(intorder), scaleX(scaleX), scaleY(scaleY),
 scaleZ(scaleZ), voxelsize(voxelsize)
 {
   discReal.min = -Nsup*voxelsize/2.0;
@@ -34,13 +35,6 @@ void HermiteOperatorMatrix::evalHermitte()
     evalAllHermitteAtPosition( nbasis, points[i], &hermiteEval[i][0] );
     //gsl_sf_hermite_phys_array( integorder, points[i], &hermiteEval[i][0] );
   }
-}
-
-void HermiteOperatorMatrix::flattened2xyz( int flattened, int &nx, int &ny, int &nz ) const
-{
-  nz = flattened%nbasis;
-  ny = ( flattened/nbasis )%nbasis;
-  nx = flattened/(nbasis*nbasis);
 }
 
 double HermiteOperatorMatrix::basis( int ix, int iy, int iz, int nx, int ny, int nz ) const
