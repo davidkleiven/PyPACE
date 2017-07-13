@@ -32,12 +32,12 @@ def main():
     mask = np.zeros( scattered.shape, dtype=np.uint8 )
     mask = np.load( "data/maskLargeEdgeFilled.npy" )
     mask[mask==255] = 1
-    mask[:,:,:] = 1
+    #mask[:,:,:] = 1
     N = mask.shape[0]
-    width = N/32
-    start = int(N/2-width/2)
-    end = int( N/2+width/2 )
-    mask[start:end,start:end,start:end] = 0
+    #width = N/32
+    #start = int(N/2-width/2)
+    #end = int( N/2+width/2 )
+    #mask[start:end,start:end,start:end] = 0
     #mask[scattered>1E-16*scattered.max()] = 1
     N = mask.shape[0]
     support = np.zeros( realspPadded.shape, dtype=np.uint8 )
