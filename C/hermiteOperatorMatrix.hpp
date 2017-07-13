@@ -22,7 +22,7 @@ public:
   *              in real space and k_x*scaleX in the Fourier domain
   */
   HermiteOperatorMatrix( double *weights, double *points, unsigned int intorder, unsigned int nbasis, uint8_t *support,
-  uint8_t *mask, int Nsup, int Nmask, double sizeX, double sizeY, double sizeZ );
+  uint8_t *mask, int Nsup, int Nmask, double sizeX, double sizeY, double sizeZ, double voxelsize );
 
   /** Convertes between the flattened index of the matrix to xyz indices */
   void flattened2xyz( int flattened, int &ix, int &iy, int &iz ) const ;
@@ -61,6 +61,7 @@ private:
   double scaleX{1.0};
   double scaleY{1.0};
   double scaleZ{1.0};
+  double voxelsize{1.0};
   std::unique_ptr<TrilinearInterpolator> supInterp;
   std::unique_ptr<TrilinearInterpolator> maskInterp;
   Discretization discReal;

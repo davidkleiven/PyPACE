@@ -11,11 +11,12 @@ import multiprocessing as mp
 import itertools as itertls
 
 class ConstrainedPower( object ):
-    def __init__( self, mask, support, Nbasis=3 ):
+    def __init__( self, mask, support, voxelsize, Nbasis=3 ):
         if ( Nbasis > 49 ):
             raise ValueError("According to the documentation on Hermite polynomials the integration routine has only been tested until 100."+
             "Here we need an integration scheme of 2*Nbasis+1 and this number should not exceed 100")
 
+        self.voxelsize = voxelsize
         self.mask = mask
         self.support = support
         self.recenter()
@@ -24,59 +25,55 @@ class ConstrainedPower( object ):
         self.Nbasis = Nbasis
         self.eigval = None
         self.eigvec = None
-        N = self.support.shape[0]
-        x = np.linspace( -N/2, N/2, N )
-        self.supInterp = interp.RegularGridInterpolator( (x,x,x), self.support, fill_value=0, bounds_error=False )
-
-        N = self.mask.shape[0]
-        kx = np.linspace( -np.pi/2.0, np.pi/2.0, N )
-        self.maskInterp = interp.RegularGridInterpolator( (kx,kx,kx), self.mask, fill_value=0, bounds_error=False )
         self.integrationOrder = 2*self.Nbasis+1
+        self.integrationOrder = 61
         self.points, self.weights = np.polynomial.hermite.hermgauss( self.integrationOrder )
 
     def recenter( self ):
+        print ("Centering the data...")
         com = np.array( ndimg.measurements.center_of_mass( self.support ) )
         center = int(self.support.shape[0]/2)
-        self.support = ndimg.interpolation.shift( self.support, center-com )
+        #self.support = ndimg.interpolation.shift( self.support, center-com )
+        for i in range(3):
+            self.support = np.roll( self.support, int(center-com[i]), axis=i )
 
         com = np.array( ndimg.measurements.center_of_mass( self.mask ) )
         center = int( self.mask.shape[0]/2 )
-        self.mask = ndimg.interpolation.shift( self.mask, center-com )
+        #self.mask = ndimg.interpolation.shift( self.mask, center-com )
+        for i in range(3):
+            self.mask = np.roll( self.mask, int(center-com[i]), axis=i)
 
     def computeScales( self ):
+        print ("Computing scales...")
+        # Approximate these value by using meshgrid on a downsamples version of the arrays
+        reduction = 16
         N = self.support.shape[0]
-        x = np.linspace( -N/2, N/2, N )
-        y = np.linspace( -N/2, N/2, N )
-        z = np.linspace( -N/2, N/2, N )
+        x = np.linspace( -N*self.voxelsize/2, N*self.voxelsize/2, N/reduction )
+        y = np.linspace( -N*self.voxelsize/2, N*self.voxelsize/2, N/reduction )
+        z = np.linspace( -N*self.voxelsize/2, N*self.voxelsize/2, N/reduction )
         X,Y,Z = np.meshgrid(x,y,z)
 
-        sumD = self.support.sum()
-        scaleX = np.abs(X*self.support).max()
-        scaleY = np.abs(Y*self.support).max()
-        scaleZ = np.abs(Z*self.support).max()
-        scaleX = np.sqrt( np.sum( X**2*self.support )/sumD )
-        scaleY = np.sqrt( np.sum( Y**2*self.support )/sumD )
-        scaleZ = np.sqrt( np.sum( Z**2*self.support )/sumD )
+        sup = self.support[::reduction,::reduction,::reduction]
+        sumD = sup.sum()
+        scaleX = np.sqrt( np.sum( X**2*sup )/sumD )
+        scaleY = np.sqrt( np.sum( Y**2*sup )/sumD )
+        scaleZ = np.sqrt( np.sum( Z**2*sup )/sumD )
         del X,Y,Z
         N = self.mask.shape[0]
-        kx = np.linspace( -np.pi, np.pi, N )
+        kx = np.linspace( -np.pi/self.voxelsize, np.pi/self.voxelsize, N/reduction )
 
         # Focus on the central region
         width = N/4
         start = int( N/2-width/2 )
         end = int( N/2+width/2 )
-        #kx = kx[start:end]
-        #self.mask = self.mask[start:end,start:end,start:end]
-        #self.maskInterp = interp.RegularGridInterpolator( (kx,kx,kx), self.mask, fill_value=0, bounds_error=False )
         KX,KY,KZ = np.meshgrid(kx,kx,kx)
 
-        #scaleKx = np.abs( KX*(1-self.mask[start:end,start:end,start:end]) ).max()
-        #scaleKy = np.abs( KY*(1-self.mask[start:end,start:end,start:end]) ).max()
-        #scaleKz = np.abs( KZ*(1-self.mask[start:end,start:end,start:end]) ).max()
-        sumM = np.sum(1-self.mask)
-        scaleKx = np.sqrt( np.sum(KX**2 *(1-self.mask))/sumM )
-        scaleKy = np.sqrt( np.sum(KY**2 *(1-self.mask))/sumM)
-        scaleKz = np.sqrt( np.sum(KZ**2 *(1-self.mask))/sumM)
+        msk = self.mask[::reduction,::reduction,::reduction]
+        sumM = np.sum(1-msk)
+        scaleKx = np.sqrt( np.sum(KX**2 *(1-msk))/sumM )
+        scaleKy = np.sqrt( np.sum(KY**2 *(1-msk))/sumM)
+        scaleKz = np.sqrt( np.sum(KZ**2 *(1-msk))/sumM)
+        print ("Scales computed...")
         return np.sqrt(scaleX/scaleKx), np.sqrt(scaleY/scaleKy), np.sqrt(scaleZ/scaleKz)
 
     def flattened2xyz( self, flattened ):
@@ -87,106 +84,6 @@ class ConstrainedPower( object ):
 
     def xyz2Flattened( self, x, y, z ):
         return x*self.Nbasis**2 + y*self.Nbasis + z
-
-    def integrate( self, n, m, weight="none" ):
-        nx1, ny1, nz1 = self.flattenedToXYZ(n)
-        nx2, ny2, nz2 = self.flattenedToXYZ(m)
-        integral = 0.0
-        x = self.basis.scaleX*self.points
-        y = self.basis.scaleY*self.points
-
-        for ix in range(len(x)):
-            for iy in range(len(y)):
-                z = self.points*self.basis.scaleZ
-                if ( weight=="none" ):
-                    supportContrib = np.ones(len(self.weights))
-                elif ( weight=="support" ):
-                    xpt = np.ones(len(z))*x[ix]#/self.basis.scaleX
-                    ypt = np.ones(len(x))*y[iy]#/self.basis.scaleY
-                    pts = np.vstack((xpt,ypt,z)).T#/self.basis.scaleZ)).T
-                    supportContrib = 1.0-self.supInterp( (xpt,ypt,z) )
-                else:
-                    raise ValueError("Weight has to none or support")
-                    # Integrate basis function n multiplied with basis function m
-                integral += np.sum( np.conj( self.basis.evalNoWeight(x[ix],y[iy],z,nx1,ny1,nz1) )*
-                self.basis.evalNoWeight(x[ix],y[iy],z,nx2,ny2,nz2)*supportContrib*
-                self.weights )*self.weights[iy]*self.weights[ix]
-        return integral
-
-    def integrateFourier( self, n, m, weight="none" ):
-        nx1, ny1, nz1 = self.flattenedToXYZ(n)
-        nx2, ny2, nz2 = self.flattenedToXYZ(m)
-        integral = 0.0
-        kx = self.points/self.basis.scaleX
-        ky = self.points/self.basis.scaleY
-
-        for ix in range(len(kx)):
-            for iy in range(len(ky)):
-                kz = self.points/self.basis.scaleZ
-                if ( weight == "none" ):
-                    maskContrib = np.ones(len(self.weights))
-                elif ( weight == "mask" ):
-                    kxpts = np.ones(len(kz))*kx[ix]#*self.basis.scaleX
-                    kypts = np.ones(len(kz))*ky[iy]#*self.basis.scaleY
-                    #pts = np.vstack( (kxpts,kypts,kz) ).T#*self.basis.scaleZ) ).T
-                    #maskContrib = self.maskInterp( pts )
-                    maskContrib = self.maskInterp( (kxpts,kypts,kz) )
-                else:
-                    raise ValueError("weight has to be either none or mask" )
-                integral += np.sum( np.conj(self.basis.evalFourier(kx[ix],ky[iy],kz,nx1,ny1,nz1))*
-                self.basis.evalFourier(kx[ix],ky[iy],kz,nx2,ny2,nz2)*maskContrib*self.weights )*self.weights[ix]*self.weights[iy]
-        return integral
-
-    def checkOrthogonality( self ):
-        for i in range(0,self.Nbasis**3):
-            for j in range(0,self.Nbasis**3):
-                ix1, iy1, iz1 = self.flattenedToXYZ(i)
-                ix2, iy2, iz2 = self.flattenedToXYZ(j)
-                norm1 = np.sqrt( self.integrate(i,i,weight="none") )
-                norm2 = np.sqrt( self.integrate(j,j,weight="none") )
-                #innerprod = np.sum( np.conj(func1)*func2 )/(norm1*norm2)
-                innerprod = self.integrate(i,j,weight="none")/( norm1*norm2 )
-                print ("(",ix1,iy1,iz1,"), (", ix2,iy2,iz2,") ",innerprod)
-
-    def operatorElement( self, n, m ):
-        ix1, iy1, iz1 = self.flattenedToXYZ(n)
-        ix2, iy2, iz2 = self.flattenedToXYZ(m)
-        #N = self.support.shape[0]
-        #x = np.linspace( -N/2, N/2, N )
-        #y = np.linspace( -N/2, N/2, N )
-        #z = np.linspace( -N/2, N/2, N )
-        #X,Y,Z = np.meshgrid(x,y,z)
-        #outsideSupport = self.mask.shape[0]**3 - np.count_nonzero(self.mask)
-
-        # Contribution from outside the support
-        #func1 = self.basis.eval( X,Y,Z, ix1, iy1, iz1 )
-        #func2 = self.basis.eval( X,Y,Z, ix2, iy2, iz2 )
-        #norm1 = np.sqrt( np.sum(np.abs(func1)**2) )
-        #norm2 = np.sqrt( np.sum(np.abs(func2)**2) )
-        #realSp = np.sum( np.conj(func1[self.support==0])*func2[self.support==0] )/(norm1*norm2)
-        norm1 = np.sqrt( self.integrate(n,n,weight="none") )
-        norm2 = np.sqrt( self.integrate(m,m,weight="none") )
-        realSpace = self.integrate(n,m,weight="support")/(norm1*norm2)
-
-        # Contribution from Fourier domain
-        #del X,Y,Z,func1,func2
-
-        #N = self.mask.shape[0]
-        #kx = np.linspace( -np.pi/2.0, np.pi/2.0, N )
-        #ky = np.linspace( -np.pi/2.0, np.pi/2.0, N )
-        #kz = np.linspace( -np.pi/2.0, np.pi/2.0, N )
-        #KX,KY,KZ = np.meshgrid(kx,ky,kz)
-        #func1 = self.basis.evalFourier( KX, KY, KZ, ix1, iy1, iz1 )
-        #func2 = self.basis.evalFourier( KX, KY, KZ, ix2, iy2, iz2 )
-        #norm1 = np.sqrt( np.sum( np.abs(func1)**2 ) )
-        #norm2 = np.sqrt( np.sum( np.abs(func2)**2 ) )
-
-        #insideMask = np.count_nonzero(self.mask)
-        #fourierSpace = np.sum( np.conj(func1[self.mask==1])*func2[self.mask==1] )/(norm1*norm2)
-        norm1 = np.sqrt( self.integrateFourier(n,n,weight="none") )
-        norm2 = np.sqrt( self.integrateFourier(m,m,weight="none") )
-        fourierSpace = self.integrateFourier(n,m,weight="mask")/(norm1*norm2)
-        return 0.5*( realSpace + fourierSpace )
 
     def buildMatrix( self ):
         print ("Building matrix...")
@@ -276,7 +173,11 @@ class ConstrainedPower( object ):
             plt.colorbar()
             plt.show()
             print ("Solving eigensystem...")
-            self.eigval, self.eigvec = np.linalg.eigh(mat)
+            #self.eigval, self.eigvec = np.linalg.eigh(mat)
+            self.eigvec, self.eigval, v = np.linalg.svd(mat)
+            self.eigval = self.eigval[::-1]
+            self.eigvec = np.fliplr(self.eigvec)
+            #self.eigval[self.eigval>0.0] = 1.0/self.eigval[self.eigval>0.0]
         elif ( mode == "sparse" ):
             mat = self.buildMatrixSparse( bandwidth )
             if ( plotMatrix ):
@@ -290,6 +191,7 @@ class ConstrainedPower( object ):
         return self.eigval, self.eigvec
 
     def getEigenModeReal( self, modeNum, x, y, z ):
+        print (self.eigvec[:,0])
         mode = self.eigvec[0,modeNum]*self.basis.eval(x,y,z,0,0,0)
         for i in range(1,self.eigvec.shape[0]):
             nx,ny,nz = self.flattened2xyz( i )

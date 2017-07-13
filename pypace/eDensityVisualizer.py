@@ -64,12 +64,15 @@ class EDensityVisualizer( object ):
         self.segmentor.replaceDataWithMeans()
         return self.segmentor.data
 
-    def plotBest( self ):
+    def plotBest( self, data=None ):
         """
         Create a 3D plot of the best fit
         """
-        bestDset = self.getBest()
-        edensity = self.getEdensity(bestDset)
+        if ( data is None ):
+            bestDset = self.getBest()
+            edensity = self.getEdensity(bestDset)
+        else:
+            edensity = data
 
         fig = mlab.figure( bgcolor=(0,0,0) )
         # Create 3D plot using Mayavi

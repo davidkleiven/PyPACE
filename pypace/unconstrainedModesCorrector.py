@@ -6,31 +6,21 @@ from scipy import optimize as opt
 class UnconstrainedModeCorrector( object ):
     def __init__( self, cnstpow, data, minimizer="laplacian" ):
         self.cnstpow = cnstpow
-        ratio = int(data.shape[0]/self.cnstpow.support.shape[0])
-        if ( ratio != 1 ):
-            print ("Downsampling the data by a factor %d"%(ratio))
-            self.data = data[::ratio,::ratio,::ratio]
+        self.data = data
 
         if ( minimizer == "laplacian"):
-            self.minimizer = LaplacianSquared( self.data, self.cnstpow )
+            self.minimizer = LaplacianSquared( self.data, self.cnstpow, ds=8 )
         elif ( minimizer == "gradient" ):
-            self.minimizer = GradientSquared( self.data, self.cnstpow )
+            self.minimizer = GradientSquared( self.data, self.cnstpow, ds=8 )
+        elif ( minimizer == "variance" ):
+            self.minimizer = Variance( self.data, self.cnstpow, ds=8 )
         else:
-            raise ValueError("minimizer has to be laplacian or gradient")
+            raise ValueError("minimizer has to be laplacian, gradient or variance")
 
-    def correct( self, threshold ):
-        if ( threshold > 1.0 or threshold < 0.0 ):
-            raise ValueError("Threshold has to be in the range [0,1]")
+    def correct( self, nModes ):
+        if ( nModes == 0 ):
+            raise RuntimeError("Number of modes has to be larger than zero")
 
-        # Count the number of modes to include
-        nModes = -1
-        for i in range(len(self.cnstpow.eigval) ):
-            if ( self.cnstpow.eigval[i] > threshold ):
-                nModes = i
-                break
-
-        if ( nModes < 0 ):
-            nModes = len(self.cnstpow.eigval)
         self.minimizer.nModes = nModes
         print ( "Using %d least constrained modes"%(nModes) )
 
@@ -38,22 +28,27 @@ class UnconstrainedModeCorrector( object ):
 
         print ("Optimizing results")
 
-        res = opt.minimize( self.minimizer.evaluate, np.ones(nModes) )
+        options = {"maxiter":10000,
+                    "disp":True}
+        res = opt.minimize( self.minimizer.evaluate, np.ones(2*nModes), method="Nelder-Mead", options=options )
         x = np.array( res["x"] )
         self.data = self.minimizer.subtractModes( x )
-        print (res["message"])
+        print ( res["message"] )
+        print ( "Number of iterations %d"%( res["nit"]) )
 
 
 class MinimizationTarget( object ):
-    def __init__( self, data, cnstpow ):
-        self.data = data
+    def __init__( self, data, cnstpow, ds=1 ):
+        self.data = data[::ds,::ds,::ds]
+        self.ds = ds
         self.cnstpow = cnstpow
+        self.sup = self.cnstpow.support[::2*ds,::2*ds,::2*ds]
         self.nModes = 0
         self.eigmodes = []
 
     def preCalculateEigenmodes( self ):
         N = self.data.shape[0]
-        x = np.linspace(-N/2,N/2,N)
+        x = np.linspace(-N*self.ds*self.cnstpow.voxelsize/2,N*self.ds*self.cnstpow.voxelsize/2,N)
         X,Y,Z = np.meshgrid( x, x, x )
         for i in range(self.nModes):
             neweigmode = self.cnstpow.getEigenModeReal( i, X,Y,Z )
@@ -73,19 +68,33 @@ class MinimizationTarget( object ):
         raise NotImplementedError( "Child classes has to implement this function" )
 
 class LaplacianSquared( MinimizationTarget ):
-    def __init__( self, data, cnstpow ):
-        MinimizationTarget.__init__( self, data, cnstpow )
+    def __init__( self, data, cnstpow, ds=1 ):
+        MinimizationTarget.__init__( self, data, cnstpow , ds=ds)
 
     def evaluate( self, coeff ):
+        Ncoeff = int( len(coeff)/2 )
+        coeff = coeff[:Ncoeff] + 1j*coeff[Ncoeff:]
         corrected = self.subtractModes( coeff )
         laplace = ndimg.filters.laplace( np.abs(corrected), mode="constant", cval=0.0 )
-        return np.sum( laplace**2 )
+        return np.sum( laplace[self.sup==1]**2 )
 
 class GradientSquared( MinimizationTarget ):
-    def __init__( self, data, cnstpow ):
-        MinimizationTarget.__init__( self, data, cnstpow )
+    def __init__( self, data, cnstpow, ds=1 ):
+        MinimizationTarget.__init__( self, data, cnstpow, ds=ds)
 
     def evaluate( self, coeff ):
+        Ncoeff = int( len(coeff)/2 )
+        coeff = coeff[:Ncoeff]# + 1j*coeff[Ncoeff:]
         corrected = np.abs( self.subtractModes( coeff ) )
         grad = np.gradient( corrected )
         return np.sum( np.sqrt(grad[0]**2 + grad[1]**2 + grad[2]**2) )
+
+class Variance( MinimizationTarget ):
+    def __init__( self, data, cnstpow, ds=1 ):
+        MinimizationTarget.__init__(self, data, cnstpo, ds=ds )
+
+    def evaluate( self, coeff ):
+        Ncoeff = int( len(coeff)/2 )
+        coeff = coeff[:Ncoeff] #+ 1j*coeff[Ncoeff:]
+        corrected = self.subtractModes( coeff )
+        return np.var( corrected[self.sup==1] )

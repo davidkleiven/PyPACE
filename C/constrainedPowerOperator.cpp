@@ -20,6 +20,7 @@ static PyObject* matrixElement( PyObject *self, PyObject *args )
   double scaleX = PyFloat_AsDouble( PyObject_GetAttrString(cnstPower,"scaleX") );
   double scaleY = PyFloat_AsDouble( PyObject_GetAttrString(cnstPower,"scaleY") );
   double scaleZ = PyFloat_AsDouble( PyObject_GetAttrString(cnstPower,"scaleZ") );
+  double voxelsize = PyFloat_AsDouble( PyObject_GetAttrString(cnstPower,"voxelsize"));
   int nbasis = PyInt_AsLong( PyObject_GetAttrString(cnstPower,"Nbasis") );
 
   #ifdef DEBUG
@@ -45,7 +46,7 @@ static PyObject* matrixElement( PyObject *self, PyObject *args )
   npy_intp* dimsWeights = PyArray_DIMS( weights );
   int integorder = dimsWeights[0];
 
-  HermiteOperatorMatrix op( weightsPtr, pointsPtr, integorder, nbasis, supportPtr, maskPtr, Nsup, Nmask, scaleX, scaleY, scaleZ );
+  HermiteOperatorMatrix op( weightsPtr, pointsPtr, integorder, nbasis, supportPtr, maskPtr, Nsup, Nmask, scaleX, scaleY, scaleZ, voxelsize );
 
   double real, imag;
   op.matrixElement( n, m, real, imag );

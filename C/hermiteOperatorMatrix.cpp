@@ -3,20 +3,21 @@
 #include <cassert>
 #include <cmath>
 #include <complex>
+#include <iostream>
 
 using namespace std;
 
 HermiteOperatorMatrix::HermiteOperatorMatrix( double *weights, double *points, unsigned int intorder, unsigned int nbasis, uint8_t *support,
-uint8_t *mask, int Nsup, int Nmask, double scaleX, double scaleY, double scaleZ ):weights(weights), points(points),
+uint8_t *mask, int Nsup, int Nmask, double scaleX, double scaleY, double scaleZ, double voxelsize ):weights(weights), points(points),
 integorder(intorder), nbasis(nbasis), support(support), mask(mask), Nsup(Nsup), Nmask(Nmask), scaleX(scaleX), scaleY(scaleY),
-scaleZ(scaleZ)
+scaleZ(scaleZ), voxelsize(voxelsize)
 {
-  discReal.min = -Nsup/2.0;
-  discReal.max = Nsup/2.0;
+  discReal.min = -Nsup*voxelsize/2.0;
+  discReal.max = Nsup*voxelsize/2.0;
   discReal.N = Nsup;
   double pi = acos(-1.0);
-  discFourier.min = -pi/2.0;
-  discFourier.max = pi/2.0;
+  discFourier.min = -pi/voxelsize;
+  discFourier.max = pi/voxelsize;
   discFourier.N = Nmask;
   supInterp = unique_ptr<TrilinearInterpolator>( new TrilinearInterpolator(support,discReal,discReal,discReal) );
   maskInterp = unique_ptr<TrilinearInterpolator>( new TrilinearInterpolator(mask,discFourier,discFourier,discFourier) );
@@ -63,11 +64,15 @@ double HermiteOperatorMatrix::integrateOutsideSupport( int nx1, int ny1, int nz1
 double HermiteOperatorMatrix::integrateInsideMask( int nx1, int ny1, int nz1, int nx2, int ny2, int nz2 ) const
 {
   double integral = 0.0;
+  double PI = acos(-1.0);
   for ( int ix=0;ix<integorder;ix++ )
   for ( int iy=0;iy<integorder;iy++ )
   for ( int iz=0;iz<integorder;iz++ )
   {
-    integral += (*maskInterp)(points[ix]/scaleX,points[iy]/scaleY,points[iz]/scaleZ)*weights[ix]*weights[iy]*weights[iz]*\
+    double kx = points[ix]/scaleX;
+    double ky = points[iy]/scaleY;
+    double kz = points[iz]/scaleZ;
+    integral += (*maskInterp)(kx,ky,kz)*weights[ix]*weights[iy]*weights[iz]*\
                 basis(ix,iy,iz,nx1,ny1,nz1)*basis(ix,iy,iz,nx2,ny2,nz2);
   }
   return integral;
