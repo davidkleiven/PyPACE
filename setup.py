@@ -14,8 +14,11 @@ extra_compile_args=["-O3", "-fPIC", "-ffast-math", "-march=native","-fopenmp","-
 extra_link_args=["-fopenmp", "-std=c++11"]
 )
 
+module5 = Extension("missingdatac", sources=["C/missingData.c"], include_dirs=["C"],
+extra_compile_args=["-O3", "-ffast-math", "-march=native","-fopenmp"])
+
 setup(
     name = "pypace",
     cmdclass={"build_ext":build_ext},
-    ext_modules=[module1,module2,module3,module4]
+    ext_modules=[module1,module2,module3,module4,module5]
 )
