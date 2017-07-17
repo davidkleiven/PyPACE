@@ -86,13 +86,40 @@ class Segmentor(object):
         fig = mlab.figure( bgcolor=(0,0,0) )
         mask = np.zeros( self.clusters.shape, dtype=np.uint8 )
         mask[self.clusters==clusterID] = 1
-        mask = mask[::downsample,::downsample,::downsample]
-        if ( mask.max() != 1 ):
-            return
-        src = mlab.pipeline.scalar_field(mask)
-        vol = mlab.pipeline.volume( src )
-        mlab.pipeline.threshold( vol, low=0.5 )
+        # Downsample by summing
+        Nx = mask.shape[0]
+        Ny = mask.shape[1]
+        Nz = mask.shape[2]
+        dsMask = np.zeros( (int(Nx/downsample),Ny,Nz), dtype=np.uint8)
+        current = 0
+        for i in range(0,dsMask.shape[0]):
+            dsMask[i,:,:] = np.sum(mask[current:current+downsample,:,:],axis=0)
+            current += downsample
 
+        mask = dsMask
+        current = 0
+        dsMask = np.zeros( (int(Nx/downsample), int(Ny/downsample), Nz), dtype=np.uint8 )
+        for i in range(0,dsMask.shape[1]):
+            dsMask[:,i,:] = np.sum( mask[:,current:current+downsample,:], axis=1 )
+            current += downsample
+        mask = dsMask
+        current = 0
+        dsMask = np.zeros( (int(Nx/downsample), int(Ny/downsample), int(Nz/downsample)), dtype=np.uint8 )
+        for i in range(0,dsMask.shape[2]):
+            dsMask[:,:,i] = np.sum(mask[:,:,current:current+downsample],axis=2)
+            current += downsample
+
+        mask = dsMask
+        #mask = mask[::downsample,::downsample,::downsample]
+        #if ( mask.max() != 1 ):
+        #    return
+        src = mlab.pipeline.scalar_field(mask)
+        #vol = mlab.pipeline.volume( src )
+        #mlab.pipeline.threshold( vol, low=0.5 )
+        mlab.pipeline.scalar_cut_plane( src, plane_orientation="x_axes")
+        mlab.pipeline.scalar_cut_plane( src, plane_orientation="y_axes")
+        mlab.pipeline.scalar_cut_plane( src, plane_orientation="z_axes")
+        mlab.show()
 
 class ProjectedCluster( object ):
     def __init__( self, id ):

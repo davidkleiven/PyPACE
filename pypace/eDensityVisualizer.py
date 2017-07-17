@@ -4,6 +4,9 @@ import numpy as np
 from mayavi import mlab
 import h5py as h5
 import segmentor as seg
+import matplotlib as mpl
+mpl.rcParams["svg.fonttype"] = "none"
+mpl.rcParams["axes.unicode_minus"] = False
 from matplotlib import pyplot as plt
 import categorize as catg
 from scipy import ndimage as ndimg
@@ -64,6 +67,18 @@ class EDensityVisualizer( object ):
         self.segmentor.replaceDataWithMeans()
         return self.segmentor.data
 
+    def plotOutline( self, data=None ):
+        if ( data is None ):
+            bestDset = self.getBest()
+            edensity = self.getEdensity(bestDset)
+        else:
+            edensity = data
+
+        fig = mlab.figure( bgcolor=(0,0,0) )
+        src = mlab.pipeline.scalar_field(edensity)
+        #vol = mlab.pipeline.volume( src )
+        mlab.pipeline.contour_surface( src )
+
     def plotBest( self, data=None ):
         """
         Create a 3D plot of the best fit
@@ -107,6 +122,7 @@ class EDensityVisualizer( object ):
         fig = plt.figure()
         ax = fig.add_subplot(1,1,1)
         ax.plot(rbins, radialMean )
+        ax.set_xlabel("Radial position")
         return fig
 
     def plot1DAngles( self, anglesDeg, data=None ):
@@ -142,6 +158,8 @@ class EDensityVisualizer( object ):
             ax1.plot( lineData, color=colors[counter%len(colors)], label="%d"%(angle*180/np.pi))
             counter += 1
         ax1.legend(loc="best", frameon=False, labelspacing=0.05)
+        ax1.set_xlabel("Position")
+        ax1.set_ylabel("Density (a.u.)")
         return fig
 
     def plotFit( self ):
@@ -167,13 +185,15 @@ class EDensityVisualizer( object ):
         ax4 = fig.add_subplot(2,3,4)
         center = int( self.sliceK.shape[0]/2 )
         if ( hasMeasuredAndSimulated ):
-            ax4.plot( self.sliceK[:,center] )
-            ax4.plot( self.ff[:,center] )
+            ax4.plot( self.sliceK[:,center], color="#e41a1c", label="Meas" )
+            ax4.plot( self.ff[:,center], color="#377eb8", label="Fit" )
+            ax4.legend( loc="best", frameon=False, labelspacing=0.05)
 
         ax5 = fig.add_subplot(2,3,5)
         if ( hasMeasuredAndSimulated ):
-            ax5.plot( self.sliceK[center,:] )
-            ax5.plot( self.ff[center,:] )
+            ax5.plot( self.sliceK[center,:], color="#e41a1c", label="Meas" )
+            ax5.plot( self.ff[center,:], color="#377eb8", label="Fit" )
+            ax5.legend( loc="best", frameon=False, labelspacing=0.05)
         ax6 = fig.add_subplot(2,3,6)
         if ( not self.mask is None ):
             ax6.imshow( self.mask, cmap="bone", interpolation="none" )

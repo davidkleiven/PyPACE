@@ -23,7 +23,7 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         self.computeMask()
 
         # Compute the q-weighting of the data
-        self.qweight.compute( showPlot=False )
+        self.qweight.compute( showPlot=True )
 
         # Divide the measured data by the weighting factor
         self.qweight.weightData( self.kspace )

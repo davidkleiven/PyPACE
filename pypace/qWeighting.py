@@ -1,6 +1,8 @@
 import categorize as ctg
 import config
 import matplotlib as mpl
+mpl.rcParams["svg.fonttype"] = "none"
+mpl.rcParams["axes.unicode_minus"] = False
 if ( not config.enableShow ):
     mpl.use("Agg")
 from matplotlib import pyplot as plt
@@ -50,6 +52,8 @@ class Qweight(object):
         self.weightsAreComputed = True
 
         if ( showPlot ):
+            print ("Exponent: ", self.slope)
+            print ("Prefactor: ", np.exp(self.interscept))
             fig = plt.figure()
             ax = fig.add_subplot(1,2,1)
             ax.plot( rbins, radialMean, 'o', color="black")

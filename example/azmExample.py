@@ -5,6 +5,7 @@ sys.path.append("pypace")
 import azmDensityCorrector as adc
 from matplotlib import pyplot as plt
 from mpi4py import MPI
+from mayavi import mlab
 
 def main( argv ):
     nIter = 12
@@ -22,16 +23,18 @@ def main( argv ):
     dCorr.segmentor.projectClusters()
     dCorr.plotSliceKspace()
     dCorr.plotMask()
+    dCorr.segmentor.plotCluster(3, downsample=4)
 
     # Try to fill the missing data in the Fourier domain by a gaussian approximation
     #dCorr.qweight.fillMissingDataWithGaussian( dCorr.mask )
 
     #dCorr.saveAllSliceClusters()
     print ("Optimizing parameters")
-    dCorr.fit( nIter=nIter, nClusters=6, maxDelta=1E-4 )
-    dCorr.merge()
+    #dCorr.fit( nIter=nIter, nClusters=6, maxDelta=1E-4 )
+    #dCorr.merge()
     #dCorr.plotFit( optimum["x"] )
     #plt.show()
+    #mlab.show()
 
 if __name__ == "__main__":
     main( sys.argv[1:] )
