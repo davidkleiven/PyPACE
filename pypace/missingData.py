@@ -69,6 +69,7 @@ class MissingDataAnalyzer( object ):
     def solve( self, niter=1000 ):
         current = self.support
         for i in range(niter):
+            print ("Iteration %d of maximum %d"%(i,niter))
             current = self.step( current )
             self.plot( current )
             plt.show()
