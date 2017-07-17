@@ -30,7 +30,8 @@ def main( argv ):
 
     #dCorr.saveAllSliceClusters()
     print ("Optimizing parameters")
-    dCorr.fit( nIter=nIter, nClusters=6, maxDelta=1E-4 )
+    width = int( dCorr.kspace.shape[0]/16 )
+    dCorr.fit( nIter=nIter, nClusters=6, maxDelta=1E-4, useSeparateClusterAtCenter=True, centerClusterWidth=width )
     dCorr.merge()
     dCorr.plotFit( optimum["x"] )
     #plt.show()

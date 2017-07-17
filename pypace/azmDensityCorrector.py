@@ -95,12 +95,13 @@ class SliceDensityCorrector( dc.DensityCorrector ):
             self.bestFF = self.buildKspace()
         return optimum
 
-    def fit( self, nIter=1000, nClusters=6, maxDelta=1E-4 ):
+    def fit( self, nIter=1000, nClusters=6, maxDelta=1E-4, useSeparateClusterAtCenter=False, centerClusterWidth=0 ):
         """
         Fit the e-density parameters to the scattering pattern
         """
-        self.segment( 6 )
-        self.segmentor.createSeparateClusterCenter( self.kspace.shape[0]/8 )
+        self.segment( nClusters )
+        if ( useSeparateClusterAtCenter ):
+            self.segmentor.createSeparateClusterCenter( centerClusterWidth )
         self.segmentor.projectClusters()
 
         if ( self.comm is None ):
