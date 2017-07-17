@@ -41,7 +41,6 @@ def main( argv ):
     width = int( dCorr.kspace.shape[0]/params["fractionCenterWidth"] )
     dCorr.fit( nIter=nIter, nClusters=params["nClusters"], maxDelta=1E-4, useSeparateClusterAtCenter=True, centerClusterWidth=width )
     dCorr.merge()
-    dCorr.plotFit( optimum["x"] )
     #plt.show()
 
     if ( haveMayavi ):
