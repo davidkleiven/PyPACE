@@ -1,7 +1,13 @@
 from __future__ import print_function
 import h5py as hf
 import numpy as np
-from mayavi import mlab
+try:
+    from mayavi import mlab
+    haveMayavi = True
+except ImportError as exc:
+    print (str(exc))
+    haveMayavi = False
+
 import h5py as h5
 import segmentor as seg
 import matplotlib as mpl
@@ -74,10 +80,11 @@ class EDensityVisualizer( object ):
         else:
             edensity = data
 
-        fig = mlab.figure( bgcolor=(0,0,0) )
-        src = mlab.pipeline.scalar_field(edensity)
-        #vol = mlab.pipeline.volume( src )
-        mlab.pipeline.contour_surface( src )
+        if ( haveMayavi ):
+            fig = mlab.figure( bgcolor=(0,0,0) )
+            src = mlab.pipeline.scalar_field(edensity)
+            #vol = mlab.pipeline.volume( src )
+            mlab.pipeline.contour_surface( src )
 
     def plotBest( self, data=None ):
         """
@@ -89,25 +96,27 @@ class EDensityVisualizer( object ):
         else:
             edensity = data
 
-        fig = mlab.figure( bgcolor=(0,0,0) )
-        # Create 3D plot using Mayavi
-        src = mlab.pipeline.scalar_field(edensity)
-        #mlab.pipeline.iso_surface( src, opacity=0.1 )
-        mlab.pipeline.scalar_cut_plane( src, colormap="plasma" )
-        mlab.pipeline.scalar_cut_plane( src, plane_orientation="y_axes", colormap="plasma" )
-        mlab.pipeline.scalar_cut_plane( src, plane_orientation="z_axes", colormap="plasma" )
+        if ( haveMayavi ):
+            fig = mlab.figure( bgcolor=(0,0,0) )
+            # Create 3D plot using Mayavi
+            src = mlab.pipeline.scalar_field(edensity)
+            #mlab.pipeline.iso_surface( src, opacity=0.1 )
+            mlab.pipeline.scalar_cut_plane( src, colormap="plasma" )
+            mlab.pipeline.scalar_cut_plane( src, plane_orientation="y_axes", colormap="plasma" )
+            mlab.pipeline.scalar_cut_plane( src, plane_orientation="z_axes", colormap="plasma" )
 
     def plotCluster( self, id, downsample=4 ):
         """
         Plot clusters
         """
-        fig = mlab.figure(bgcolor=(0,0,0))
-        mask = np.zeros(self.clusters.shape, dtype=np.uint8)
-        mask[self.clusters==id] = 1
-        mask = mask[::downsample,::downsample,::downsample]
-        src = mlab.pipeline.scalar_field(mask)
-        vol = mlab.pipeline.volume( src )
-        mlab.pipeline.threshold( vol, low=0.5 )
+        if ( haveMayavi ):
+            fig = mlab.figure(bgcolor=(0,0,0))
+            mask = np.zeros(self.clusters.shape, dtype=np.uint8)
+            mask[self.clusters==id] = 1
+            mask = mask[::downsample,::downsample,::downsample]
+            src = mlab.pipeline.scalar_field(mask)
+            vol = mlab.pipeline.volume( src )
+            mlab.pipeline.threshold( vol, low=0.5 )
 
     def plotBestRadialAveragedDensity( self ):
         """

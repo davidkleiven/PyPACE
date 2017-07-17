@@ -5,7 +5,12 @@ sys.path.append("pypace")
 import azmDensityCorrector as adc
 from matplotlib import pyplot as plt
 from mpi4py import MPI
-from mayavi import mlab
+
+try:
+    from mayavi import mlab
+    haveMayavi = True
+except ImportError as exc:
+    haveMayavi = False
 import json
 
 def main( argv ):
@@ -34,11 +39,13 @@ def main( argv ):
     #dCorr.saveAllSliceClusters()
     print ("Optimizing parameters")
     width = int( dCorr.kspace.shape[0]/params["fractionCenterWidt"] )
-    dCorr.fit( nIter=nIter, nClusters=6, maxDelta=1E-4, useSeparateClusterAtCenter=True, centerClusterWidth=width )
+    dCorr.fit( nIter=nIter, nClusters=params["nClusters"], maxDelta=1E-4, useSeparateClusterAtCenter=True, centerClusterWidth=width )
     dCorr.merge()
     dCorr.plotFit( optimum["x"] )
     #plt.show()
-    #mlab.show()
+
+    if ( haveMayavi ):
+        #mlab.show()
 
 if __name__ == "__main__":
     main( sys.argv[1:] )

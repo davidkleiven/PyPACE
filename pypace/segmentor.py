@@ -5,7 +5,13 @@ import categorize as catg
 import pypaceCython as pcmp
 import multiprocessing as mp
 from matplotlib import pyplot as plt
-from mayavi import mlab
+
+try:
+    from mayavi import mlab
+    haveMayavi = True
+except ImportError as exc:
+    print (str(exc))
+    haveMayavi = False
 
 class Segmentor(object):
     def __init__( self, data, comm=None ):
@@ -83,6 +89,8 @@ class Segmentor(object):
             fig.savefig("figures/azm%d.png"%(i))
 
     def plotCluster( self, clusterID, downsample=4 ):
+        if ( not haveMayavi ):
+            return
         fig = mlab.figure( bgcolor=(0,0,0) )
         mask = np.zeros( self.clusters.shape, dtype=np.uint8 )
         mask[self.clusters==clusterID] = 1
