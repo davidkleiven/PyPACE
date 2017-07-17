@@ -41,7 +41,7 @@ class MissingDataAnalyzer( object ):
         """
         ft = np.fft.rfftn( x )
         mdc.applyFourier( self, x )
-        return np.fft.irfftn(x)
+        return np.fft.irfftn(x, x.shape )
 
     def projectA( self, x ):
         """
