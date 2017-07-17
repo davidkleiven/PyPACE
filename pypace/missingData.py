@@ -20,7 +20,6 @@ class MissingDataAnalyzer( object ):
     def step( self, current ):
         x = copy.deepcopy( current )
         pa = self.projectA( self.fB(x) )
-        x = copy.deepcopy( current )
         pb = self.projectB( self.fA(x) )
         current = current + self.beta*(pa-pb)
         return current

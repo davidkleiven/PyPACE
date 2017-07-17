@@ -1,5 +1,6 @@
 #include <Python.h>
 #include <numpy/ndarrayobject.h>
+#include <assert.h>
 
 static PyObject* applyFourier( PyObject *self, PyObject *args )
 {
@@ -21,14 +22,20 @@ static PyObject* applyFourier( PyObject *self, PyObject *args )
   {
     int imask1 = dimsMask[0]/2 + i;
     int imask2 = dimsMask[0]/2-i;
+    assert( imask1 < dimsMask[0] );
+    assert( imask2 >= 0 );
     for ( int j=0;j<dims[1];j++)
     {
       int jmask1 = dimsMask[1]/2 + j;
       int jmask2 = dimsMask[1]/2 - j;
+      assert( jmask1 < dimsMask[1] );
+      assert( jmask2 >= 0 );
       for ( int k=0;k<dims[2];k++ )
       {
         int kmask1 = dimsMask[2]/2 + k;
         int kmask2 = dimsMask[2]/2 - k;
+        assert( kmask1 < dimsMask[2] );
+        assert( kmask2 >= 0 );
         uint8_t* val1 = (uint8_t *) PyArray_GETPTR3( mask, imask1, jmask1, kmask1 );
         uint8_t* val2 = (uint8_t *) PyArray_GETPTR3( mask, imask2, jmask2, kmask2 );
         if (( *val1 == 1 ) || ( *val2 == 1 ))
