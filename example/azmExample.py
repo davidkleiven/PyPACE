@@ -6,19 +6,22 @@ import azmDensityCorrector as adc
 from matplotlib import pyplot as plt
 from mpi4py import MPI
 from mayavi import mlab
+import json
 
 def main( argv ):
-    nIter = 12
-    for arg in argv:
-        if ( arg.find("--iter=") != -1 ):
-            nIter = int( arg.split("--iter=")[1] )
+    if ( len(argv) != 1 ):
+        print ("Usage: python azmExample.py params.json")
+    infile = open( argv[0], 'r' )
+    params = json.load( infile )
+    infile.close()
+    nIter = params["nIter"]
 
     reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
     kspace = "data/NiAu_sample1_3D.npy"
     comm = MPI.COMM_WORLD
     dCorr = adc.SliceDensityCorrector( reconstruct, kspace, 0.17, 55.2, comm=comm, debug=False,
     projectionAxis=2, segmentation="voxels" )
-    dCorr.segment( 6 )
+    dCorr.segment( params["nClusters"] )
     #dCorr.segmentor.replaceDataWithMeans()
     dCorr.segmentor.projectClusters()
     dCorr.plotSliceKspace()
@@ -30,7 +33,7 @@ def main( argv ):
 
     #dCorr.saveAllSliceClusters()
     print ("Optimizing parameters")
-    width = int( dCorr.kspace.shape[0]/16 )
+    width = int( dCorr.kspace.shape[0]/params["fractionCenterWidt"] )
     dCorr.fit( nIter=nIter, nClusters=6, maxDelta=1E-4, useSeparateClusterAtCenter=True, centerClusterWidth=width )
     dCorr.merge()
     dCorr.plotFit( optimum["x"] )
