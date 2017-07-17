@@ -30,9 +30,9 @@ def main( argv ):
 
     #dCorr.saveAllSliceClusters()
     print ("Optimizing parameters")
-    #dCorr.fit( nIter=nIter, nClusters=6, maxDelta=1E-4 )
-    #dCorr.merge()
-    #dCorr.plotFit( optimum["x"] )
+    dCorr.fit( nIter=nIter, nClusters=6, maxDelta=1E-4 )
+    dCorr.merge()
+    dCorr.plotFit( optimum["x"] )
     #plt.show()
     #mlab.show()
 
