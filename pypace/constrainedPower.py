@@ -246,3 +246,11 @@ def innerLoopSparse( pMatSparse ):
             pMatSparse.rows.append(j)
             pMatSparse.cols.append(i)
     return pMatSparse
+
+class ConstrainedPowerFromFile( object ):
+    def __init__( self, data ):
+        ConstrainedPower( None, None, 1.0 )
+        self.data = data
+
+    def get( self ):
+        return self.data

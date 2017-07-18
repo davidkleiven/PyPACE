@@ -2,10 +2,14 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy import ndimage as ndimg
 from scipy import optimize as opt
+import constrainedPower as cpow
 
 class UnconstrainedModeCorrector( object ):
     def __init__( self, cnstpow, data, minimizer="laplacian" ):
-        self.cnstpow = cnstpow
+        if ( isinstance(cnstpow, cpow.ConstrainedPower) or isinstance(cnstpow, cpow.ConstrainedPowerFromFile) ):
+            self.cnstpow = cnstpow
+        else:
+            raise TypeError("cnstpow has to be either an instance of ConstrainedPower or ConstrainedPowerFromFile")
         self.data = data
 
         if ( minimizer == "laplacian"):
@@ -17,7 +21,7 @@ class UnconstrainedModeCorrector( object ):
         else:
             raise ValueError("minimizer has to be laplacian, gradient or variance")
 
-    def correct( self, nModes ):
+    def correct( self, nModes, useComplexCoeff=False ):
         if ( nModes == 0 ):
             raise RuntimeError("Number of modes has to be larger than zero")
 
@@ -25,12 +29,23 @@ class UnconstrainedModeCorrector( object ):
         print ( "Using %d least constrained modes"%(nModes) )
 
         self.minimizer.preCalculateEigenmodes()
+        if ( isinstance(self.cnstpow,cpow.ConstrainedPower) ):
+            minmethod="Nelder-Mead"
+        elif ( isinstance(self.cnstpow,cpow.ConstrainedPower) ):
+            minmethod="BFGS"
 
         print ("Optimizing results")
 
         options = {"maxiter":10000,
                     "disp":True}
-        res = opt.minimize( self.minimizer.evaluate, np.ones(2*nModes), method="Nelder-Mead", options=options )
+        if ( useComplexCoeff ):
+            print ("Using complex coefficients...")
+            x0 = np.ones(2*nModes)
+        else:
+            print ("Using real coefficients...")
+            x0 = np.ones(nModes)
+
+        res = opt.minimize( self.minimizer.evaluate, x0, method=minmethod, options=options )
         x = np.array( res["x"] )
         self.data = self.minimizer.subtractModes( x )
         print ( res["message"] )
@@ -47,12 +62,17 @@ class MinimizationTarget( object ):
         self.eigmodes = []
 
     def preCalculateEigenmodes( self ):
-        N = self.data.shape[0]
-        x = np.linspace(-N*self.ds*self.cnstpow.voxelsize/2,N*self.ds*self.cnstpow.voxelsize/2,N)
-        X,Y,Z = np.meshgrid( x, x, x )
-        for i in range(self.nModes):
-            neweigmode = self.cnstpow.getEigenModeReal( i, X,Y,Z )
-            self.eigmodes.append(neweigmode)
+        if ( isinstance(self.cnstpow, cpow.ConstrainedPower) ):
+            N = self.data.shape[0]
+            x = np.linspace(-N*self.ds*self.cnstpow.voxelsize/2,N*self.ds*self.cnstpow.voxelsize/2,N)
+            X,Y,Z = np.meshgrid( x, x, x )
+            for i in range(self.nModes):
+                neweigmode = self.cnstpow.getEigenModeReal( i, X,Y,Z )
+                self.eigmodes.append(neweigmode)
+        elif ( isinstance(self.cnstpow,cpow.ConstrainedPowerFromFile)):
+            self.eigmodes.append(self.cnstpow.data)
+        else:
+            raise TypeError("cnstpow has to be of type ConstrainedPower or ConstrainedPowerFromFile")
 
     def subtractModes( self, coeff ):
         if ( self.eigmodes == [] ):

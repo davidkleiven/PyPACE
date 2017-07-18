@@ -83,9 +83,40 @@ static PyObject* applyRealSpace( PyObject *self, PyObject *args )
   return imgnp;
 }
 
+static PyObject* copyToRealPart( PyObject *self, PyObject *args )
+{
+  PyObject *source = NULL;
+  PyObject *dest = NULL;
+  if ( !PyArg_ParseTuple( args, "OO", &source, &dest) )
+  {
+    PyErr_SetString( PyExc_TypeError, "Could not parse the argmument" );
+    return NULL;
+  }
+
+  PyObject* npsource = PyArray_FROM_OTF( source, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY );
+  PyObject* npdest = PyArray_FROM_OTF( dest, NPY_COMPLEX128, NPY_ARRAY_OUT_ARRAY );
+  npy_intp* dims = PyArray_DIMS(npdest);
+
+  #pragma omp parallel for
+  for ( int i=0;i<dims[0]*dims[1]*dims[2];i++ )
+  {
+    int iz = i%dims[2];
+    int iy = ( i/dims[2] )%dims[1];
+    int ix = i/(dims[2]*dims[1]);
+    double *sval = (double *) PyArray_GETPTR3( npsource, ix, iy, iz );
+    double *dval = (double *) PyArray_GETPTR3( npdest, ix, iy, iz );
+    dval[0] = *sval;
+    dval[1] = 0.0;
+  }
+  //Py_DECREF(npdest);
+  Py_DECREF(npsource);
+  return npdest;
+}
+
 static PyMethodDef missingDataMethods[] = {
   {"applyFourier",applyFourier,METH_VARARGS,"Project the solution onto the space where the mask is zero"},
   {"applyRealSpace",applyRealSpace,METH_VARARGS,"Project the solution onto the space where the support is 1"},
+  {"copyToRealPart", copyToRealPart, METH_VARARGS, "Copy array to the real part of an array"},
   {NULL,NULL,0,NULL}
 };
 
