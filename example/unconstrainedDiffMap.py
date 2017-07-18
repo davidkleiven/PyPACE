@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import pickle as pck
 
 def main():
-    useCubicMask = True
+    useCubicMask = False
     ds = 1
     reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
     kspace = "data/NiAu_sample1_3D.npy"
@@ -32,8 +32,8 @@ def main():
         start = int(center-w/2)
         end = int(center+w/2)
         mask[start:end,start:end,start:end] = 0
-    support = support[::1,::1,::1]
-    mask = mask[::1,::1,::1]
+    support = support[::ds,::ds,::ds]
+    mask = mask[::ds,::ds,::ds]
     mdata = md.MissingDataAnalyzer( mask, support )
     mdata.solve( niter=30 )
 

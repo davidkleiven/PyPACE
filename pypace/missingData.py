@@ -10,12 +10,20 @@ import matplotlib as mpl
 if ( not config.enableShow ):
     mpl.use("Agg")
 from matplotlib import pyplot as plt
+import pyfftw as pfw
+import multiprocessing as mp
 
 class MissingDataAnalyzer( object ):
     def __init__( self, mask, support ):
         self.mask = mask
         self.support = support
         self.beta = 0.9
+
+        self.ftsource = pfw.empty_aligned( self.mask.shape, dtype="complex128" )
+        self.ftdest = pfw.empty_aligned( self.mask.shape, dtype="complex128" )
+        self.ftForw = pfw.FFTW( self.ftsource, self.ftdest, axes=(0,1,2), threads=mp.cpu_count() )
+        self.ftBack = pfw.FFTW( self.ftdest, self.ftsource, axes=(0,1,2), direction="FFTW_BACKWARD", threads=mp.cpu_count() )
+        self.ftsource[:,:,:] = self.support
 
     def step( self, current ):
         x = copy.deepcopy( current )
@@ -42,8 +50,13 @@ class MissingDataAnalyzer( object ):
         """
         Make x-consistent with the Fourier domain constraint
         """
-        ft = np.fft.fftn( x )
+        #ft = np.fft.fftn( x )
+        self.ftsource[:,:,:] = x
+        self.ftForw()
+        ft = self.ftdest
         mdc.applyFourier( self, ft )
+        self.ftBack()
+        return self.ftsource.real
         return np.fft.ifftn( ft ).real
 
     def projectA( self, x ):
@@ -76,15 +89,15 @@ class MissingDataAnalyzer( object ):
         ft = np.fft.fftshift(ft)
         ax4 = fig.add_subplot(2,3,4)
         ax4.imshow( ft[center,:,:], cmap="nipy_spectral", norm=mpl.colors.LogNorm() )
-        ax4.imshow( msk[center,:,:], cmap="bone", alpha=0.9)
+        ax4.imshow( msk[center,:,:], cmap="bone", alpha=0.5)
 
         ax5 = fig.add_subplot(2,3,5)
         ax5.imshow( ft[:,center,:], cmap="nipy_spectral", norm=mpl.colors.LogNorm())
-        ax5.imshow( msk[:,center,:], cmap="bone", alpha=0.9)
+        ax5.imshow( msk[:,center,:], cmap="bone", alpha=0.5)
 
         ax6 = fig.add_subplot(2,3,6)
         ax6.imshow( ft[:,:,center], cmap="nipy_spectral", norm=mpl.colors.LogNorm())
-        ax6.imshow( msk[:,:,center], cmap="bone", alpha=0.9)
+        ax6.imshow( msk[:,:,center], cmap="bone", alpha=0.5)
         return fig
 
     def computeConstrainedPower( self, img ):
