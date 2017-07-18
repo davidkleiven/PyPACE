@@ -6,8 +6,8 @@ from matplotlib import pyplot as plt
 import pickle as pck
 
 def main():
-    useCubicMask = True
-    ds = 4
+    useCubicMask = False
+    ds = 1
     reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
     kspace = "data/NiAu_sample1_3D.npy"
     scattered = np.load( kspace )
@@ -35,7 +35,7 @@ def main():
     support = support[::ds,::ds,::ds]
     mask = mask[::ds,::ds,::ds]
     mdata = md.MissingDataAnalyzer( mask, support )
-    mdata.solve( niter=300 )
+    mdata.solve( niter=3000 )
 
 if __name__ == "__main__":
     main()
