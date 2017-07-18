@@ -52,12 +52,13 @@ class MissingDataAnalyzer( object ):
         """
         #ft = np.fft.fftn( x )
         self.ftsource[:,:,:] = x
+        #mdc.copyToRealPart( x, self.ftsource );
         self.ftForw()
         ft = self.ftdest
         mdc.applyFourier( self, ft )
         self.ftBack()
         return self.ftsource.real
-        return np.fft.ifftn( ft ).real
+        #return np.fft.ifftn( ft ).real
 
     def projectA( self, x ):
         """
@@ -89,15 +90,15 @@ class MissingDataAnalyzer( object ):
         ft = np.fft.fftshift(ft)
         ax4 = fig.add_subplot(2,3,4)
         ax4.imshow( ft[center,:,:], cmap="nipy_spectral", norm=mpl.colors.LogNorm() )
-        ax4.imshow( msk[center,:,:], cmap="bone", alpha=0.5)
+        ax4.imshow( msk[center,:,:], cmap="bone", alpha=0.3)
 
         ax5 = fig.add_subplot(2,3,5)
         ax5.imshow( ft[:,center,:], cmap="nipy_spectral", norm=mpl.colors.LogNorm())
-        ax5.imshow( msk[:,center,:], cmap="bone", alpha=0.5)
+        ax5.imshow( msk[:,center,:], cmap="bone", alpha=0.3)
 
         ax6 = fig.add_subplot(2,3,6)
         ax6.imshow( ft[:,:,center], cmap="nipy_spectral", norm=mpl.colors.LogNorm())
-        ax6.imshow( msk[:,:,center], cmap="bone", alpha=0.5)
+        ax6.imshow( msk[:,:,center], cmap="bone", alpha=0.3)
         return fig
 
     def computeConstrainedPower( self, img ):

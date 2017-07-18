@@ -35,7 +35,7 @@ def main():
     support = support[::ds,::ds,::ds]
     mask = mask[::ds,::ds,::ds]
     mdata = md.MissingDataAnalyzer( mask, support )
-    mdata.solve( niter=30 )
+    mdata.solve( niter=300 )
 
 if __name__ == "__main__":
     main()
