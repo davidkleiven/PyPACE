@@ -10,12 +10,13 @@ extra_link_args=["-fopenmp"])
 
 module4 = Extension( "constrainedpowerc", sources=["C/constrainedPowerOperator.cpp", "C/hermiteOperatorMatrix.cpp",
 "C/trilinearInterpolator.cpp", "C/constrainedOperator.cpp"], include_dirs=["C"], language="c++",
-extra_compile_args=["-O3", "-fPIC", "-ffast-math", "-march=native","-fopenmp","-std=c++11"],
+extra_compile_args=["-fPIC", "-ffast-math", "-march=native","-fopenmp","-std=c++11"],
 extra_link_args=["-fopenmp", "-std=c++11"]
 )
 
 module5 = Extension("missingdatac", sources=["C/missingData.c"], include_dirs=["C"],
-extra_compile_args=["-O3", "-ffast-math", "-march=native","-fopenmp"])
+extra_compile_args=["-O3", "-ffast-math", "-march=native","-fopenmp"],
+extra_link_args=["-fopenmp", "-std=c++11"])
 
 setup(
     name = "pypace",
