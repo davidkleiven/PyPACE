@@ -73,7 +73,7 @@ static PyObject* applyRealSpace( PyObject *self, PyObject *args )
   {
     uint8_t* sup = (uint8_t *) PyArray_GETPTR3( support, i, j, k );
     double *imgval = (double *) PyArray_GETPTR3( imgnp, i, j, k );
-    if (( *sup == 0 ) || ( *imgval < 0.0 ))
+    if (*sup == 0)
     {
       double *val = (double *) PyArray_GETPTR3( imgnp, i, j, k );
       *val = 0.0;

@@ -50,7 +50,9 @@ class MissingDataAnalyzer( object ):
         """
         Make x-consistent with the Fourier domain constraint
         """
+        #ft = np.fft.fftn( x )
         self.ftsource[:,:,:] = x
+        #mdc.copyToRealPart( x, self.ftsource );
         self.ftForw()
         ft = self.ftdest
         mdc.applyFourier( self, ft )
