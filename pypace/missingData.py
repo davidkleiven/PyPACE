@@ -12,6 +12,7 @@ if ( not config.enableShow ):
 from matplotlib import pyplot as plt
 import pyfftw as pfw
 import multiprocessing as mp
+import subprocess as sub
 
 class MissingDataAnalyzer( object ):
     def __init__( self, mask, support ):
@@ -25,6 +26,8 @@ class MissingDataAnalyzer( object ):
         #self.ftBack = pfw.FFTW( self.ftdest, self.ftsource, axes=(0,1,2), direction="FFTW_BACKWARD", threads=mp.cpu_count() )
         #self.ftsource[:,:,:] = self.support
         self.constraints = None
+        self.fixedPoint = None
+        self.allErrors = []
 
     def step( self, current ):
         x = copy.deepcopy( current )
@@ -127,6 +130,13 @@ class MissingDataAnalyzer( object ):
         ax6.imshow( msk[:,:,center], cmap="bone", alpha=0.3)
         return fig
 
+    def plotProgression( self ):
+        fig = plt.figure()
+        ax1 = fig.add_subplot(1,1,1)
+        ax1.plot(self.allErrors, color="black")
+        ax1.set_yscale("log")
+        return fig
+
     def computeConstrainedPower( self, img ):
         norm1 = np.sqrt( np.sum(img**2) )
         outside = np.sqrt( np.sum( img[self.support==0]**2) )
@@ -135,31 +145,52 @@ class MissingDataAnalyzer( object ):
         inside = np.sqrt( np.sum(ft[self.mask==1]**2) )
         return 0.5*(outside/norm1 + inside/norm2)
 
-    def getImg( self, current ):
-        pa = self.projectA(current)
+    def getImg( self ):
+        if ( self.fixedPoint is None ):
+            raise RuntimeError("Cannot produce image when the solve function is not called")
+        pa = self.projectA( self.fixedPoint )
         return self.projectB(pa)
 
-    def solve( self, constraints, niter=1000, relerror=0.0 ):
+    def solve( self, constraints, niter=1000, relerror=0.0, show=False ):
         self.constraints = constraints
-        current = [copy.deepcopy(self.support).astype(np.float64) for i in range(len(constraints))]
+        for cnst in self.constraints:
+            if ( not isinstance(cnst,Constraint) ):
+                raise TypeError("All constraints need to be of type Constraint")
+
+        shp = self.support.shape
+        initial = np.random.rand(shp[0],shp[1],shp[2])
+        current = [copy.deepcopy(initial) for i in range(len(constraints))]
         #current = self.support
         self.mask = np.fft.fftshift(self.mask)
+        sub.call(["mkdir","-p","localMinima"])
+        saveImgNextTimeErrorIncrease = True
         for i in range(niter):
             print ("Iteration %d of maximum %d"%(i,niter))
             current, error = self.step( current )
+            self.allErrors.append(error)
             if ( error < relerror):
                 print ("Convergence criteria reached")
                 break
 
+            if ( error > self.allErrors[-1] and saveImgNextTimeErrorIncrease ):
+                self.fixedPoint = current
+                fig = self.plot( self.getImg() )
+                fig.savefig("localMinima/img%d.png"%(i))
+                saveImgNextTimeErrorIncrease = False
+            else:
+                saveImgNextTimeErrorIncrease = True
 
         # Now the projection of the image to constraint A also satisfies the constrained B
-        current = self.getImg( current )
+        self.fixedPoint = current
+        current = self.getImg()
         fname = "data/unconstrained.dat"
         np.save( fname, current )
         print ("Constrained power %.2E"%(self.computeConstrainedPower(current)))
         print ("Data written to %s"%(fname))
-        self.plot( current )
-        plt.show()
+        if ( show ):
+            self.plot( current )
+            self.plotProgression()
+            plt.show()
 
 # Define constraint classes
 class Constraint( object ):
@@ -195,3 +226,23 @@ class FourierConstraint( Constraint ):
         mdc.applyFourier( self.analyzer, ft )
         self.ftBack()
         return self.ftsource.real
+
+class OrthogonalConstraint( Constraint ):
+    def __init__( self, missingData, orthogData ):
+        Constraint.__init__( self, missingData )
+        self.orthogData = orthogData
+        self.orthogData /= np.sqrt( np.sum(self.orthogData**2) )
+
+    def apply( self, img ):
+        # Project onto
+        proj = np.sum( img*self.orthogData )
+        img -= proj*self.orthogData
+        return img
+
+class NormalizationConstraint( Constraint ):
+    def __init__( self, missingData ):
+        Constraint.__init__( self, missingData )
+
+    def apply( self, img ):
+        img /= np.sqrt( np.sum(img**2) )
+        return img

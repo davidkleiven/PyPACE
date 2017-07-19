@@ -4,6 +4,7 @@ import missingData as md
 import numpy as np
 from matplotlib import pyplot as plt
 import pickle as pck
+import copy
 
 def main():
     useCubicMask = True
@@ -35,8 +36,12 @@ def main():
     support = support[::ds,::ds,::ds]
     mask = mask[::ds,::ds,::ds]
     mdata = md.MissingDataAnalyzer( mask, support )
-    constraints = [md.FourierConstraint(mdata),md.RealSpaceConstraint(mdata)]
-    mdata.solve( constraints, niter=100, relerror=1E-3 )
+    constraints = [md.FourierConstraint(mdata),md.RealSpaceConstraint(mdata),md.NormalizationConstraint(mdata)]
+
+    nfunctions = 2
+    for i in range(nfunctions):
+        mdata.solve( constraints, niter=800, relerror=5E-3, show=True )
+        constraints.append( md.OrthogonalConstraint( mdata, copy.deepcopy(mdata.getImg()) ) )
 
 if __name__ == "__main__":
     main()
