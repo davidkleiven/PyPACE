@@ -15,8 +15,8 @@ import time
 def main():
     timestamp = str( time.strftime("%Y_%m_%d_%H_%M_%S") )
     print ("Started on %s"%(timestamp))
-    useCubicMask = True
-    ds = 8
+    useCubicMask = False
+    ds = 1
     reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
     kspace = "data/NiAu_sample1_3D.npy"
     scattered = np.load( kspace )
@@ -59,7 +59,7 @@ def main():
         constraints = [md.FourierConstraint(mdata),md.RealSpaceConstraint(mdata)]#,md.NormalizationConstraint(mdata)]
         #constraints += orthogonalConstraints
 
-        result = mdata.solve( constraints, niter=10000, relerror=2.5E-2, show=False, initial=initconditions[i].astype(np.float64),
+        result = mdata.solve( constraints, niter=10000, relerror=5E-2, show=False, initial=initconditions[i].astype(np.float64),
         zeroLimit=1E-4 )
 
         fig = mdata.plot( mdata.getImg() )
