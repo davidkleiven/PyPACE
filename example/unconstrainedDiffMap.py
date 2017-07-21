@@ -46,6 +46,9 @@ def main():
     #mdata = md.MissingDataAnalyzer( mask, support )
     #constraints = [md.FourierConstraint(mdata),md.RealSpaceConstraint(mdata)]#,md.NormalizationConstraint(mdata)]
 
+    np.save( "maskTest.npy", mask )
+    np.save( "supportTest.npy", support )
+    exit()
     nfunctions = 1
     initGenerator = mdig.InitialGenerator( mask.shape )
     initconditions = initGenerator.generate()
