@@ -68,6 +68,8 @@ def main():
 
     # Save the unconstrained modes
     with h5.File( "data/unconstrainedModes%s.h5"%(timestamp), 'w' ) as hf:
+        hf.create_dataset("support", data=support)
+        hf.create_dataset("mask", data=mask)
         for i in range( len(images) ):
             group = hf.create_group("mode%d"%(i) )
             group.create_dataset( "img", data=images[i]["image"] )
