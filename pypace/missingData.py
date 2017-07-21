@@ -28,8 +28,13 @@ class MissingDataAnalyzer( object ):
         self.constraints = None
         self.fixedPoint = None
         self.allErrors = []
+        self.bestImg = None
+        self.bestError = 1E30
 
     def step( self, current ):
+        """
+        Iterate the solution one step
+        """
         x = copy.deepcopy( current )
         pa = self.projectA( self.fB(x) )
         #assert( np.allclose(x,current) )
@@ -81,9 +86,11 @@ class MissingDataAnalyzer( object ):
         #self.ftBack()
         avg = np.zeros(x[0].shape)
         # Normalize
+        totweight = 0
         for i in range(len(x)):
-            avg += x[i]
-        return avg/len(x)
+            avg += x[i]*self.constraints[i].weight
+            totweight += self.constraints[i].weight
+        return avg/totweight
         #return self.ftsource.real
 
     def projectA( self, x ):
@@ -97,6 +104,9 @@ class MissingDataAnalyzer( object ):
         return x
 
     def plot( self, x ):
+        """
+        Plots slices in both real space and Fourier space of the image
+        """
         fig = plt.figure()
         ax1 = fig.add_subplot(2,3,1)
         center = int( self.support.shape[0]/2 )
@@ -131,6 +141,9 @@ class MissingDataAnalyzer( object ):
         return fig
 
     def plotProgression( self ):
+        """
+        Plots the error on each iteration step
+        """
         fig = plt.figure()
         ax1 = fig.add_subplot(1,1,1)
         ax1.plot(self.allErrors, color="black")
@@ -138,6 +151,9 @@ class MissingDataAnalyzer( object ):
         return fig
 
     def computeConstrainedPower( self, img ):
+        """
+        Computes the fraction of constrained power by the realspace constraint and the Fourier constraint
+        """
         norm1 = np.sqrt( np.sum(img**2) )
         outside = np.sqrt( np.sum( img[self.support==0]**2) )
         ft = np.abs( np.fft.fftn(img) )
@@ -145,31 +161,67 @@ class MissingDataAnalyzer( object ):
         inside = np.sqrt( np.sum(ft[self.mask==1]**2) )
         return 0.5*(outside/norm1 + inside/norm2)
 
+    def getMaxVal( self, allimgs ):
+        maxval = -1E30
+        for img in allimgs:
+            trial = np.abs(img).max()
+            if ( trial > maxval ):
+                maxval = trial
+        return maxval
+
     def getImg( self ):
+        """
+        Computes the resulting image
+        """
         if ( self.fixedPoint is None ):
             raise RuntimeError("Cannot produce image when the solve function is not called")
         pa = self.projectA( self.fixedPoint )
         return self.projectB(pa)
 
-    def solve( self, constraints, niter=1000, relerror=0.0, show=False ):
+    def solve( self, constraints, niter=1000, relerror=0.0, show=False, initial=None, zeroLimit=0.0 ):
+        """
+        Find a function that satisfy the real space constraint, but scatter only into the region that is not measured
+        Arguments:
+            niter - maximum number of iterations
+            relerror - convergence criteria. The simulation stops when max(Pa-Pb)/max(Pb) < relerror
+                Pa is the result of the first projection operator and Pb is the result of the second
+            show - Boolean if True a plot of the solution is showed
+            initial - initial image. If None, the image is initialized with random numbers
+            zeroLimit - Upper limit of what is considered as the zero image. If the maximum value
+                of the image is below this number, the image is considered to consist of only zeros and the simulation is
+                aborted. Note that the zero image typically satisfy all the constraints perfectly, so one will never escape
+                from the zero image.
+        """
         self.constraints = constraints
         for cnst in self.constraints:
             if ( not isinstance(cnst,Constraint) ):
                 raise TypeError("All constraints need to be of type Constraint")
 
         shp = self.support.shape
-        initial = np.random.rand(shp[0],shp[1],shp[2])
+        if ( initial is None or initial.shape != self.mask.shape ):
+            print ("Generating initial state...")
+            initial = np.random.rand(shp[0],shp[1],shp[2])
         current = [copy.deepcopy(initial) for i in range(len(constraints))]
         #current = self.support
         self.mask = np.fft.fftshift(self.mask)
         sub.call(["mkdir","-p","localMinima"])
         saveImgNextTimeErrorIncrease = True
+        message = ""
+        status = False
         for i in range(niter):
             print ("Iteration %d of maximum %d"%(i,niter))
             current, error = self.step( current )
             self.allErrors.append(error)
+
+            if ( error < self.bestError ):
+                print ("New best image...")
+                self.bestError = error
+                self.fixedPoint = current
+                self.bestImg = copy.deepcopy( self.getImg() )
+
             if ( error < relerror):
-                print ("Convergence criteria reached")
+                message = "Convergence criteria reached"
+                status = True
                 break
 
             if ( error > self.allErrors[-1] and saveImgNextTimeErrorIncrease ):
@@ -180,39 +232,54 @@ class MissingDataAnalyzer( object ):
             else:
                 saveImgNextTimeErrorIncrease = True
 
+            if ( self.getMaxVal(current) < zeroLimit ):
+                message = "Approaching the zero solution. Aborted."
+                break
+
         # Now the projection of the image to constraint A also satisfies the constrained B
         self.fixedPoint = current
         current = self.getImg()
         fname = "data/unconstrained.dat"
         np.save( fname, current )
+        cnstpower = self.computeConstrainedPower(current)
         print ("Constrained power %.2E"%(self.computeConstrainedPower(current)))
         print ("Data written to %s"%(fname))
+        print (message)
         if ( show ):
-            self.plot( current )
+            self.plot( self.bestImg )
             self.plotProgression()
             plt.show()
 
+        res = {"message":message,
+        "image":self.bestImg,
+        "constrainedPower":cnstpower,
+        "error":self.allErrors,
+        "bestError":self.bestError,
+        "status":status}
+        return res
+
 # Define constraint classes
 class Constraint( object ):
-    def __init__( self, missingData ):
+    def __init__( self, missingData, weight=1.0 ):
         self.analyzer = missingData
         if ( not isinstance(missingData, MissingDataAnalyzer ) ):
             raise TypeError("missingData has to be of type MissingDataAnalyzer")
+        self.weight = weight
 
     def apply( self, img ):
         raise NotImplementedError("Child classes has to implement this function")
 
 class RealSpaceConstraint( Constraint ):
-    def __init__( self, missingData ):
-        Constraint.__init__( self, missingData )
+    def __init__( self, missingData, weight=1.0 ):
+        Constraint.__init__( self, missingData, weight=weight )
 
     def apply( self, img ):
         mdc.applyRealSpace( self.analyzer, img )
         return img
 
 class FourierConstraint( Constraint ):
-    def __init__( self, missingData ):
-        Constraint.__init__( self, missingData )
+    def __init__( self, missingData, weight=1.0 ):
+        Constraint.__init__( self, missingData, weight=weight )
         self.ftsource = pfw.empty_aligned( missingData.mask.shape, dtype="complex128" )
         self.ftdest = pfw.empty_aligned( missingData.mask.shape, dtype="complex128" )
         self.ftForw = pfw.FFTW( self.ftsource, self.ftdest, axes=(0,1,2), threads=mp.cpu_count() )
@@ -228,8 +295,8 @@ class FourierConstraint( Constraint ):
         return self.ftsource.real
 
 class OrthogonalConstraint( Constraint ):
-    def __init__( self, missingData, orthogData ):
-        Constraint.__init__( self, missingData )
+    def __init__( self, missingData, orthogData, weight=1.0 ):
+        Constraint.__init__( self, missingData, weight=weight )
         self.orthogData = orthogData
         self.orthogData /= np.sqrt( np.sum(self.orthogData**2) )
 
