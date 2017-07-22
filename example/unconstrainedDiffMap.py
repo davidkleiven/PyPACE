@@ -3,6 +3,9 @@ sys.path.append("pypace")
 import missingData as md
 import numpy as np
 import matplotlib as mpl
+import config
+if ( not config.enableShow ):
+    mpl.use("Agg")
 mpl.rcParams["svg.fonttype"] = "none"
 mpl.rcParams["axes.unicode_minus"] = False
 from matplotlib import pyplot as plt
