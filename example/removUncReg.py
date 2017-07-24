@@ -6,7 +6,7 @@ import removeUncoveredRegion as rur
 def main( argv ):
     fname = "data/Run5pFull/unconstrainedModes2017_07_22_11_33_40.h5"
     remover = rur.RemoveUncovered( None, fname )
-    removed = remover.projectToScattered( asuint8=True )
+    removed = remover.projectToScattered( asint8=True )
     fnameOut = "data/realspaceCorrected.npy"
     np.save( fnameOut, removed )
     print ( "Projected version saved to %s"%(fnameOut) )
