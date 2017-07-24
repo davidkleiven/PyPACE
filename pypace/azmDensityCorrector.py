@@ -59,7 +59,7 @@ class SliceDensityCorrector( dc.DensityCorrector ):
 
     def needPadding( self ):
         shp1 = self.sliceKspace.shape
-        shp2 = self.segmentor.projectedClusters[0].shape
+        shp2 = self.segmentor.projectedClusters[0].density.shape
         pad = False
 
         if ( shp2[0] != shp2[1] or shp2[0] != shp2[2] ):
