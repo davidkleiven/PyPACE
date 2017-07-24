@@ -124,7 +124,7 @@ class EDensityVisualizer( object ):
         """
         bestDset = self.getBest()
         edensity = self.getEdensity(bestDset)
-        Nbins=80
+        Nbins=300
         rbins = np.linspace(0.0, 1.0, Nbins)
         radialMean = catg.radialMean( edensity, Nbins )
 

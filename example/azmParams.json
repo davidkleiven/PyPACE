@@ -1,5 +1,5 @@
 {
-  "nIter":120,
+  "nIter":1200,
   "nClusters":6,
   "fractionCenterWidth":16
 }
