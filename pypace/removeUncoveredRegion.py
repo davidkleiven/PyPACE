@@ -21,6 +21,12 @@ class RemoveUncovered( object ):
 
         self.makeOrthogonal()
 
+        # Assert that the shape of the objects are the same
+        self.realspace = np.zeros(self.mask.shape)
+        start = int(self.mask.shape[0]/4)
+        end = int(3*self.mask.shape[0]/4)
+        self.realspace[start:end,start:end,start:end] = reconstruct
+
     def makeOrthogonal( self ):
         if ( len(self.modes) <= 1 ):
             print ("Less than one mode. Nothing to do.")
