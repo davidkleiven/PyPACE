@@ -25,7 +25,7 @@ class RemoveUncovered( object ):
         self.realspace = np.zeros(self.mask.shape)
         start = int(self.mask.shape[0]/4)
         end = int(3*self.mask.shape[0]/4)
-        self.realspace[start:end,start:end,start:end] = reconstruct
+        self.realspace[start:end,start:end,start:end] = reconstructed
 
     def makeOrthogonal( self ):
         if ( len(self.modes) <= 1 ):
