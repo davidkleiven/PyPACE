@@ -3,10 +3,15 @@ sys.path.append("pypace")
 import numpy as np
 import removeUncoveredRegion as rur
 
-def main():
+def main( argv ):
     fname = "data/Run5pFull/unconstrainedModes2017_07_22_11_33_40.h5"
     remover = rur.RemoveUncovered( None, fname )
-    remover.plot()
+    removed = remover.projectToScattered( asuint8=True )
+    fnameOut = "data/realspaceCorrected.npy"
+    np.save( fnameOut, removed )
+    print ( "Projected version saved to %s"%(fnameOut) )
+    if ( "--plot" in argv ):
+        remover.plot()
 
 if __name__ == "__main__":
-    main()
+    main( sys.argv[1:] )

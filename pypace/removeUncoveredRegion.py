@@ -38,6 +38,20 @@ class RemoveUncovered( object ):
             self.modes[i] /= np.sqrt( np.sum(self.modes[i]**2) )
         return self.modes
 
+    def projectToScattered( self, asint8=False ):
+        for mode in self.modes:
+            proj = np.sum( mode*self.realspace )
+            self.realspace -= proj*mode
+
+        if ( asint8 ):
+            return self.toInt8(self.realspace)
+        return self.realspace
+
+    def toInt8( self, data ):
+        upper = np.abs(data).max()
+        data *= 127/upper
+        return data.astype(np.int8)
+
     def removeUncoveredFeatures( self ):
         for mode in self.modes:
             proj = np.sum( self.realspace*mode )
