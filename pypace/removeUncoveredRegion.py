@@ -19,7 +19,7 @@ class RemoveUncovered( object ):
                 if ( isinstance(group,h5.Group) ):
                     self.modes.append( np.array( group.get("img")) )
 
-        #self.makeOrthogonal()
+        self.makeOrthogonal()
 
     def makeOrthogonal( self ):
         if ( len(self.modes) <= 1 ):
@@ -45,10 +45,10 @@ class RemoveUncovered( object ):
         return self.realspace
 
     def plot( self ):
-        mask = np.load("maskTest.npy")
-        support = np.load("supportTest.npy")
-        mask = np.fft.fftshift(mask)
-        md = mdata.MissingDataAnalyzer( mask, support )
+        #mask = np.load("maskTest.npy")
+        #support = np.load("supportTest.npy")
+        self.mask = np.fft.fftshift(mask)
+        md = mdata.MissingDataAnalyzer( self.mask, self.support )
         counter = 0
         for mode in self.modes:
             print( md.computeConstrainedPower(mode) )
