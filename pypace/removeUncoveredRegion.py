@@ -47,7 +47,7 @@ class RemoveUncovered( object ):
     def plot( self ):
         #mask = np.load("maskTest.npy")
         #support = np.load("supportTest.npy")
-        self.mask = np.fft.fftshift(mask)
+        self.mask = np.fft.fftshift(self.mask)
         md = mdata.MissingDataAnalyzer( self.mask, self.support )
         counter = 0
         for mode in self.modes:
