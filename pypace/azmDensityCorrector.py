@@ -78,7 +78,7 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         """
         ks = np.zeros(self.sliceKspace.shape)
 
-        if ( self.needPadding ):
+        if ( self.needPadding() ):
             start = int( ks.shape[0]/4 )
             end = int( 3*ks.shape[0]/4 )
         else:
