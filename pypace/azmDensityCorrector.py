@@ -62,8 +62,8 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         shp2 = self.segmentor.projectedClusters[0].density.shape
         pad = False
 
-        if ( shp2[0] != shp2[1] or shp2[0] != shp2[2] ):
-            raise ValueError("The projected clusters need to be cubic")
+        if ( shp2[0] != shp2[1] ):
+            raise ValueError("The projected clusters need to be square")
 
         if ( shp2[0] == int(shp1[0]/2) ):
             return True
