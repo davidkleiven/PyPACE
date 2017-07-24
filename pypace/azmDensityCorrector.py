@@ -122,6 +122,7 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         self.segment( nClusters )
         if ( useSeparateClusterAtCenter ):
             self.segmentor.createSeparateClusterCenter( centerClusterWidth )
+        self.removeInternalPointsFromSurroundingCluster()
         self.segmentor.projectClusters()
 
         if ( self.comm is None ):
