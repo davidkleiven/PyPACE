@@ -107,7 +107,8 @@ class DensityCorrector(object):
     def removeInternalPointsFromSurroundingCluster( self ):
         internal = np.zeros(self.reconstructed.shape,dtype=np.uint8)
         internal[ self.reconstructed>1E-6*self.reconstructed.max()] = 1
-        self.segmentor.clusters[0][internal==1] = len(self.segmentor.means)
+        newcluster = np.logical_and( self.segmentor.clusters==0, internal==1 )
+        self.segmentor.clusters[newcluster] = len(self.segmentor.means)
         self.segmentor.means = np.zeros(len(self.segmentor.means)+1)
 
     def plotClusters( self, cluster, cmap="bone" ):
