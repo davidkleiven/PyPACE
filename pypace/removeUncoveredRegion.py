@@ -39,6 +39,8 @@ class RemoveUncovered( object ):
         return self.modes
 
     def projectToScattered( self, asint8=False ):
+        if ( self.realspace is None ):
+            raise TypeError("No realspace object given")
         for mode in self.modes:
             proj = np.sum( mode*self.realspace )
             self.realspace -= proj*mode

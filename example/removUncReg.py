@@ -5,7 +5,8 @@ import removeUncoveredRegion as rur
 
 def main( argv ):
     fname = "data/Run5pFull/unconstrainedModes2017_07_22_11_33_40.h5"
-    remover = rur.RemoveUncovered( None, fname )
+    realsp = np.load( "data/average_NiAu_sample1_3D_50_1.npy" )
+    remover = rur.RemoveUncovered( realsp, fname )
     removed = remover.projectToScattered( asint8=True )
     fnameOut = "data/realspaceCorrected.npy"
     np.save( fnameOut, removed )
