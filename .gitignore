@@ -108,3 +108,5 @@ tmpOptFiles/*
 *.raw
 *.h5
 pypace/pypaceCythonMP.c
+*.npy
+*.db
