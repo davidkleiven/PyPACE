@@ -32,7 +32,7 @@ def main( argv ):
     dCorr.segmentor.projectClusters()
     dCorr.plotSliceKspace()
     dCorr.plotMask()
-    dCorr.segmentor.plotCluster(3, downsample=4)
+    dCorr.segmentor.plotCluster(0, downsample=8)
 
     # Try to fill the missing data in the Fourier domain by a gaussian approximation
     #dCorr.qweight.fillMissingDataWithGaussian( dCorr.mask )
@@ -40,8 +40,8 @@ def main( argv ):
     #dCorr.saveAllSliceClusters()
     print ("Optimizing parameters")
     width = int( dCorr.kspace.shape[0]/params["fractionCenterWidth"] )
-    dCorr.fit( nIter=nIter, nClusters=params["nClusters"], maxDelta=1E-4, useSeparateClusterAtCenter=True, centerClusterWidth=width )
-    dCorr.merge()
+    #dCorr.fit( nIter=nIter, nClusters=params["nClusters"], maxDelta=1E-4, useSeparateClusterAtCenter=True, centerClusterWidth=width )
+    #dCorr.merge()
     #plt.show()
 
     if ( haveMayavi ):

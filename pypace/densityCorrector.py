@@ -21,7 +21,7 @@ import pickle as pck
 class DensityCorrector(object):
     def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None, debug=False,
     segmentation="voxels" ):
-        self.reconstructed = np.load( reconstructedFname ).astype(np.float64)
+        self.reconstructed = np.abs( np.load( reconstructedFname ).astype(np.float64) )
         self.kspace = np.load( kspaceFname ).astype(np.float64)
         self.kspaceIntegral = self.kspace.sum()
 
