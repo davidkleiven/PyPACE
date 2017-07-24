@@ -57,13 +57,33 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         ax.imshow( self.sliceKspace, cmap="nipy_spectral" )
         return fig
 
+    def needPadding( self ):
+        shp1 = self.sliceKspace.shape
+        shp2 = self.segmentor.projectedClusters[0].shape
+        pad = False
+
+        if ( shp2[0] != shp2[1] or shp2[0] != shp2[2] ):
+            raise ValueError("The projected clusters need to be cubic")
+
+        if ( shp2[0] == int(shp1[0]/2) ):
+            return True
+        elif ( shp2[0] == shp1[0] ):
+            return False
+        else:
+            raise ValueError("The realspace object has to either be half the size of the k-space object or of similar shape as the k-space object")
+
     def buildKspace( self ):
         """
         Computes the scattering pattern using the projection approximation
         """
         ks = np.zeros(self.sliceKspace.shape)
-        start = int( ks.shape[0]/4 )
-        end = int( 3*ks.shape[0]/4 )
+
+        if ( self.needPadding ):
+            start = int( ks.shape[0]/4 )
+            end = int( 3*ks.shape[0]/4 )
+        else:
+            start = 0
+            end = ks.shape[0]
         for i in range( len(self.segmentor.means) ):
             #print (self.segmentor.projectedClusters[i].density)
             ks[start:end,start:end] += self.segmentor.projectedClusters[i].density*self.segmentor.means[i]
