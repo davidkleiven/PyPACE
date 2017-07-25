@@ -40,7 +40,7 @@ def main( argv ):
     #dCorr.saveAllSliceClusters()
     print ("Optimizing parameters")
     width = int( dCorr.kspace.shape[0]/params["fractionCenterWidth"] )
-    dCorr.fit( nIter=nIter, nClusters=params["nClusters"], maxDelta=1E-4, useSeparateClusterAtCenter=False, centerClusterWidth=width )
+    dCorr.fit( nIter=nIter, nClusters=params["nClusters"], maxDelta=1E-4, useSeparateClusterAtCenter=False, centerClusterWidth=width, mode="pso" )
     dCorr.merge()
     #plt.show()
 

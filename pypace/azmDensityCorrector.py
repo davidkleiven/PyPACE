@@ -14,6 +14,12 @@ import h5py as h5
 import time
 import datetime as dt
 
+try:
+    import pyswarm as pso
+    hasPSO = True
+except ImportError as exc
+    hasPSO = False
+
 class SliceDensityCorrector( dc.DensityCorrector ):
     def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None, debug=False,
     projectionAxis=2, segmentation="voxels" ):
@@ -46,6 +52,7 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         self.kspaceSum = np.sum(self.sliceKspace)
         self.bestFF = None
         self.bestResidual = 1E30
+        self.optimizationMode = "local"
 
     def plotSliceKspace( self, fig=None ):
         """
@@ -115,10 +122,32 @@ class SliceDensityCorrector( dc.DensityCorrector ):
             self.bestFF = self.buildKspace()
         return optimum
 
-    def fit( self, nIter=1000, nClusters=6, maxDelta=1E-4, useSeparateClusterAtCenter=False, centerClusterWidth=0 ):
+    def fitPSO( self, nClusters, nIter=1000, maxDelta=1E-4 ):
+        """
+        Perform the curve fit using Particle Swarm Optimization from the pyswarm module
+        """
+        if ( hasPSO ):
+            lb = np.zeros( len(self.segmentor.means)-1 )
+            ub = np.zeros( len(self.segmentor.means)-1 )+maxDelta
+            xopt, fopt = pso.pso( self.residual, lb, ub, maxiter=nIter, processes=mp.cpu_count() )
+        else:
+            raise ImportError("The module pyswarm was not found")
+        self.segmentor.means[1:] = xopt
+
+        # Create a dictionary similar to the ones return by scipys optimization functions
+        result = {
+        "cost":fopt,
+        "success":True
+        }
+        return result
+
+    def fit( self, nIter=1000, nClusters=6, maxDelta=1E-4, useSeparateClusterAtCenter=False, centerClusterWidth=0, mode="local" ):
         """
         Fit the e-density parameters to the scattering pattern
         """
+        if ( mode != "local" and mode != "pso" ):
+            raise ValueError("mode has to be either local or pso")
+        self.optimizationMode = mode
         self.segment( nClusters )
         if ( useSeparateClusterAtCenter ):
             self.segmentor.createSeparateClusterCenter( centerClusterWidth )
@@ -130,7 +159,7 @@ class SliceDensityCorrector( dc.DensityCorrector ):
 
         rank = self.comm.Get_rank()
         nPerProcess = int( nIter/self.comm.size )
-        if ( nPerProcess == 0 ):
+        if ( nPerProcess == 0 or mode =="pso" ):
             nPerProcess = 1
 
         folder = "tmpOptFiles"
@@ -140,13 +169,18 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         fname = folder+"/optimizationResults%d.h5"%(rank)
         h5file = h5.File( fname, 'w' )
         for i in range(nPerProcess):
-            optimum = self.fitSingle()
+            if ( mode == "local" ):
+                optimum = self.fitSingle()
+            elif ( mode == "pso" ):
+                optimum = self.fitPSO( nClusters, nIter=nIter, maxDelta=maxDelta )
             dset = h5file.create_dataset( "rank%d_%d"%(rank,i), data=self.segmentor.means )
             dset.attrs["converged"] = optimum["success"]
             dset.attrs["cost"] = optimum["cost"]
         h5file.close()
 
     def merge( self, fname="" ):
+        if ( self.optimizationMode != "local" ):
+            return
         self.comm.Barrier()
         rank = self.comm.Get_rank()
         if ( rank == 0 ):
