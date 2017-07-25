@@ -17,7 +17,7 @@ import datetime as dt
 try:
     import pyswarm as pso
     hasPSO = True
-except ImportError as exc
+except ImportError as exc:
     hasPSO = False
 
 class SliceDensityCorrector( dc.DensityCorrector ):
