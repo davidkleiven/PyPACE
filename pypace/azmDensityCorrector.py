@@ -129,7 +129,7 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         if ( hasPSO ):
             lb = np.zeros( len(self.segmentor.means)-1 )
             ub = np.zeros( len(self.segmentor.means)-1 )+maxDelta
-            xopt, fopt = pso.pso( self.residual, lb, ub, maxiter=nIter, processes=mp.cpu_count() )
+            xopt, fopt = pso.pso( residualNotInstanceMethod, lb, ub, args=(self,), maxiter=nIter, processes=mp.cpu_count() )
         else:
             raise ImportError("The module pyswarm was not found")
         self.segmentor.means[1:] = xopt
@@ -250,3 +250,7 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         Save all the clusters
         """
         self.segmentor.plotAllSlices()
+
+# Wrapper of the residual function
+def residualNotInstanceMethod( x, instance ):
+    return instance.residual(x)
