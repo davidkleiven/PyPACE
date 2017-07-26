@@ -60,7 +60,7 @@ class MatrixBuilder3D:
         """
         Insert slices when the angle of rotation alpha satisfy 0 < alpha <= 45
 
-        See: :func:'~MatrixBuilder3D.insert'
+        See: :func:'~projectionApprox.MatrixBuilder3D.insert'
         """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
@@ -94,7 +94,7 @@ class MatrixBuilder3D:
         """
         Insert slices when the angle of rotation alpha satisfy 45 < alpha <= 90
 
-        See: :func:'~MatrixBuilder3D.insert'
+        See: :func:'~projectionApprox.MatrixBuilder3D.insert'
         """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
@@ -129,7 +129,7 @@ class MatrixBuilder3D:
         """
         Insert slices when the angle of rotation alpha satisfy 90 < alpha <= 135
 
-        See: :func:'~MatrixBuilder3D.insert'
+        See: :func:'~projectionApprox.MatrixBuilder3D.insert'
         """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
@@ -163,7 +163,7 @@ class MatrixBuilder3D:
         """
         Insert slices when the angle of rotation alpha satisfy135 < alpha <= 180
 
-        See: :func:'~MatrixBuilder3D.insert'
+        See: :func:'~projectionApprox.MatrixBuilder3D.insert'
         """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
