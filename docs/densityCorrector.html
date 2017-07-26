@@ -1,0 +1,393 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>densityCorrector module &mdash; PyPACE 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="PyPACE 1.0 documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PyPACE
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">densityCorrector module</a></li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyPACE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>densityCorrector module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/densityCorrector.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-densityCorrector">
+<span id="densitycorrector-module"></span><h1>densityCorrector module<a class="headerlink" href="#module-densityCorrector" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="densityCorrector.DensityCorrector">
+<em class="property">class </em><code class="descclassname">densityCorrector.</code><code class="descname">DensityCorrector</code><span class="sig-paren">(</span><em>reconstructedFname</em>, <em>kspaceFname</em>, <em>wavelength</em>, <em>voxelsize</em>, <em>comm=None</em>, <em>debug=False</em>, <em>segmentation='voxels'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Main class for correcting the density obtained by the phase retrieval algorithm</p>
+<dl class="docutils">
+<dt>reconstructedFname: str</dt>
+<dd>Filename where the image reconstructed with the phase retrieval algorithm</dd>
+<dt>kspaceFname: str</dt>
+<dd>Filename of the the 3D scattering data</dd>
+<dt>wavelength: float</dt>
+<dd>Wavelength of the incoming X-ray beam in nano meters</dd>
+<dt>voxelsize: float</dt>
+<dd>Size of the voxels in nano meters</dd>
+<dt>comm: MPI.comm</dt>
+<dd>MPI communicator object. If None, the process run on a single core</dd>
+<dt>debug: bool</dt>
+<dd>If True debug messages will be printed.</dd>
+<dt>segmentation: str</dt>
+<dd>Algorithm used for segmentation. Currently this has to be voxels</dd>
+</dl>
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.buildKspace">
+<code class="descname">buildKspace</code><span class="sig-paren">(</span><em>angleStepDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.buildKspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.buildKspace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute 3D scattering pattern using the projection approximation</p>
+<dl class="docutils">
+<dt>angleStepDeg: float</dt>
+<dd>Number of degrees to rotate the object with on each step.
+The higher step the faster the 3D kspace is built, but the accuracy becomes poor.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.computeMask">
+<code class="descname">computeMask</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.computeMask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.computeMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes a mask where all the points that are not measured in the
+experimental dataset is set to 0 and all points that are included
+are set to 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.costFunction">
+<code class="descname">costFunction</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.costFunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.costFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the mean square error between the simulated and the measured scattering mattern
+All points that are not included in the experimental dataset are masked out</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>nClusters</em>, <em>angleStepKspace=10.0</em>, <em>maxDelta=0.0001</em>, <em>nGAgenerations=50</em>, <em>printStatusMessage=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the simulated scattering pattern to the experimental by using the Genetic Algorithm</p>
+<dl class="docutils">
+<dt>nClusters: int</dt>
+<dd>Number of clusters to use in the segmentation</dd>
+<dt>angleStepKspace: float</dt>
+<dd>Rotation step to use when the 3D kspace is built. Default: 10 degree</dd>
+<dt>maxDelta: float</dt>
+<dd>Maximum value of the deviation from unity of the real part of the refractive index</dd>
+<dt>nGAgenerations: int</dt>
+<dd>Number of generations in the Genetic Algorithm. Default is 50</dd>
+<dt>printStatusMessage: bool</dt>
+<dd>If True status messages after each generation is printed</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.getMeanSqError">
+<code class="descname">getMeanSqError</code><span class="sig-paren">(</span><em>angle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.getMeanSqError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.getMeanSqError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the mean square error between the simulated and the measured dataset
+This function is only used to se if the simulated pattern is rotated with respect to the measured.
+It is not used in the fitting procedure and thus a very accurate mean square error is not needed
+Hence, all the arrays are downsampled by a factor 4 to speed up the determination of the
+overall rotation angle</p>
+<dl class="docutils">
+<dt>angle: float</dt>
+<dd>Rotates the K-space by angle. The angles is given in degress</dd>
+<dt>Returns: float</dt>
+<dd>The mean square error between the original K-space and the rotated</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.optimizeRotation">
+<code class="descname">optimizeRotation</code><span class="sig-paren">(</span><em>nangles=24</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.optimizeRotation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.optimizeRotation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the rotation angle between the measured and the simulated scattering pattern</p>
+<dl class="docutils">
+<dt>nangles: int</dt>
+<dd>Number of angles used when determining the optimal rotation</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.plotClusters">
+<code class="descname">plotClusters</code><span class="sig-paren">(</span><em>cluster</em>, <em>cmap='bone'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.plotClusters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.plotClusters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots individual clusters given by the cluster array</p>
+<dl class="docutils">
+<dt>clusters. int</dt>
+<dd>ID of the cluster to plot</dd>
+<dt>cmap: str</dt>
+<dd>Colormap. Default is bone</dd>
+<dt>Returns: fig, ax</dt>
+<dd><p class="first">fig - Matplotlib figure object</p>
+<p class="last">ax - Matplotlib ax object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.plotKspace">
+<code class="descname">plotKspace</code><span class="sig-paren">(</span><em>data</em>, <em>cmap='inferno'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.plotKspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.plotKspace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots cuts in the kspace scattering pattern of the object</p>
+<dl class="docutils">
+<dt>data: ndarray</dt>
+<dd>3D array of the scattering data</dd>
+<dt>cmape: str</dt>
+<dd>Colormap. Default inferno</dd>
+</dl>
+<p>Returns:         fig, [ax1,ax2,ax3]
+fig - Figure object</p>
+<p>[ax1,ax2,ax3] - list of the three ax objects describing the subplots</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.plotMask">
+<code class="descname">plotMask</code><span class="sig-paren">(</span><em>fig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.plotMask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.plotMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the mask</p>
+<dl class="docutils">
+<dt>fig: Matplotlib figure object</dt>
+<dd>If given the mask is plotted on an existing figure. Otherwise a new figure instance is created</dd>
+<dt>Returns: fig</dt>
+<dd>The Matplotlib figure object</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.plotRec">
+<code class="descname">plotRec</code><span class="sig-paren">(</span><em>show=False</em>, <em>cmap='inferno'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.plotRec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.plotRec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots cuts in the reconstructed object through the center</p>
+<dl class="docutils">
+<dt>show: bool</dt>
+<dd>If True pyplot.show() is called at the end</dd>
+<dt>cmap: str</dt>
+<dd>Colormap used. Default is inferno</dd>
+<dt>Returns: fig, [ax1,ax2,ax3]</dt>
+<dd><p class="first">fig - Matplotlib figure object</p>
+<p class="last">[ax1,ax2,ax3] - list of the Matplotlib axes object created</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.removeInternalPointsFromSurroundingCluster">
+<code class="descname">removeInternalPointsFromSurroundingCluster</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.removeInternalPointsFromSurroundingCluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.removeInternalPointsFromSurroundingCluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a separate cluster of voxels inside the support that
+was segmented into the same clusters as the surrounding region not
+belonging to the support</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="densityCorrector.DensityCorrector.segment">
+<code class="descname">segment</code><span class="sig-paren">(</span><em>Nclusters</em>, <em>maxIter=1000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/densityCorrector.html#DensityCorrector.segment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#densityCorrector.DensityCorrector.segment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Segments the image into N clusters</p>
+<p>Nclusters - number of clusters to use</p>
+<p>maxIter - Maximum number of iterations. Default is 1000</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, David Kleiven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
