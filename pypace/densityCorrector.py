@@ -8,7 +8,6 @@ mpl.rcParams["svg.fonttype"] = "none"
 mpl.rcParams["axes.unicode_minus"] = False
 from matplotlib import pyplot as plt
 import segmentor as seg
-import shellSegmentor as sseg
 import qWeighting as qw
 import projectionApprox as pa
 from scipy.ndimage import interpolation as sciinterp
