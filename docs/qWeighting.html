@@ -26,7 +26,7 @@
 
   
   
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="static/css/theme.css" type="text/css" />
   
 
   
@@ -38,7 +38,7 @@
     <link rel="top" title="PyPACE 1.0 documentation" href="index.html"/> 
 
   
-  <script src="_static/js/modernizr.min.js"></script>
+  <script src="static/js/modernizr.min.js"></script>
 
 </head>
 
@@ -141,7 +141,7 @@
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/qWeighting.rst.txt" rel="nofollow"> View page source</a>
+            <a href="sources/qWeighting.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -158,7 +158,7 @@
 <span id="qweighting-module"></span><h1>qWeighting module<a class="headerlink" href="#module-qWeighting" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="qWeighting.Qweight">
-<em class="property">class </em><code class="descclassname">qWeighting.</code><code class="descname">Qweight</code><span class="sig-paren">(</span><em>kspaceData</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qWeighting.html#Qweight"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">qWeighting.</code><code class="descname">Qweight</code><span class="sig-paren">(</span><em>kspaceData</em><span class="sig-paren">)</span><a class="reference internal" href="modules/qWeighting.html#Qweight"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Computing the weighting of the scattered data to make them more uniform as a function of scattering
 wavevector q</p>
@@ -168,7 +168,7 @@ wavevector q</p>
 </dl>
 <dl class="method">
 <dt id="qWeighting.Qweight.compute">
-<code class="descname">compute</code><span class="sig-paren">(</span><em>showPlot=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qWeighting.html#Qweight.compute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.compute" title="Permalink to this definition">¶</a></dt>
+<code class="descname">compute</code><span class="sig-paren">(</span><em>showPlot=False</em><span class="sig-paren">)</span><a class="reference internal" href="modules/qWeighting.html#Qweight.compute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.compute" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit a radial power law to the scattering data</p>
 <dl class="docutils">
 <dt>showPlot: bool</dt>
@@ -178,7 +178,7 @@ wavevector q</p>
 
 <dl class="method">
 <dt id="qWeighting.Qweight.fillMissingDataWithGaussian">
-<code class="descname">fillMissingDataWithGaussian</code><span class="sig-paren">(</span><em>mask</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qWeighting.html#Qweight.fillMissingDataWithGaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.fillMissingDataWithGaussian" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fillMissingDataWithGaussian</code><span class="sig-paren">(</span><em>mask</em><span class="sig-paren">)</span><a class="reference internal" href="modules/qWeighting.html#Qweight.fillMissingDataWithGaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.fillMissingDataWithGaussian" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fill the region of missing data with a Gaussian fit</p>
 <dl class="docutils">
 <dt>mask: ndarray</dt>
@@ -188,7 +188,7 @@ wavevector q</p>
 
 <dl class="method">
 <dt id="qWeighting.Qweight.fitRadialGaussian">
-<code class="descname">fitRadialGaussian</code><span class="sig-paren">(</span><em>showPlot=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qWeighting.html#Qweight.fitRadialGaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.fitRadialGaussian" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fitRadialGaussian</code><span class="sig-paren">(</span><em>showPlot=True</em><span class="sig-paren">)</span><a class="reference internal" href="modules/qWeighting.html#Qweight.fitRadialGaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.fitRadialGaussian" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform a Gaussian fit to radial averaged pattern</p>
 <dl class="docutils">
 <dt>showPlot: bool</dt>
@@ -198,7 +198,7 @@ wavevector q</p>
 
 <dl class="method">
 <dt id="qWeighting.Qweight.getRadialBins">
-<code class="descname">getRadialBins</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/qWeighting.html#Qweight.getRadialBins"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.getRadialBins" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getRadialBins</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="modules/qWeighting.html#Qweight.getRadialBins"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.getRadialBins" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the radial binning</p>
 <dl class="docutils">
 <dt>Returns: ndarray</dt>
@@ -208,7 +208,7 @@ wavevector q</p>
 
 <dl class="method">
 <dt id="qWeighting.Qweight.getWeight">
-<code class="descname">getWeight</code><span class="sig-paren">(</span><em>q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qWeighting.html#Qweight.getWeight"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.getWeight" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getWeight</code><span class="sig-paren">(</span><em>q</em><span class="sig-paren">)</span><a class="reference internal" href="modules/qWeighting.html#Qweight.getWeight"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.getWeight" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the weighting factor</p>
 <dl class="docutils">
 <dt>q: float, ndarray</dt>
@@ -218,7 +218,7 @@ wavevector q</p>
 
 <dl class="method">
 <dt id="qWeighting.Qweight.radialGaussian">
-<code class="descname">radialGaussian</code><span class="sig-paren">(</span><em>r</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qWeighting.html#Qweight.radialGaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.radialGaussian" title="Permalink to this definition">¶</a></dt>
+<code class="descname">radialGaussian</code><span class="sig-paren">(</span><em>r</em><span class="sig-paren">)</span><a class="reference internal" href="modules/qWeighting.html#Qweight.radialGaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.radialGaussian" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a radial Gaussian approximation of the scattering data</p>
 <dl class="docutils">
 <dt>r: float, ndarray</dt>
@@ -228,7 +228,7 @@ wavevector q</p>
 
 <dl class="method">
 <dt id="qWeighting.Qweight.weightData">
-<code class="descname">weightData</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qWeighting.html#Qweight.weightData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.weightData" title="Permalink to this definition">¶</a></dt>
+<code class="descname">weightData</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="modules/qWeighting.html#Qweight.weightData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qWeighting.Qweight.weightData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the weight by fitting a power law to the scattered data averaged over solid angles</p>
 <dl class="docutils">
 <dt>data: ndarray</dt>
@@ -282,16 +282,16 @@ wavevector q</p>
             SOURCELINK_SUFFIX: '.txt'
         };
     </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/underscore.js"></script>
+      <script type="text/javascript" src="static/doctools.js"></script>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
   
   
-    <script type="text/javascript" src="_static/js/theme.js"></script>
+    <script type="text/javascript" src="static/js/theme.js"></script>
   
 
   

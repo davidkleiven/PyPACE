@@ -26,7 +26,7 @@
 
   
   
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="static/css/theme.css" type="text/css" />
   
 
   
@@ -38,7 +38,7 @@
     <link rel="top" title="PyPACE 1.0 documentation" href="index.html"/> 
 
   
-  <script src="_static/js/modernizr.min.js"></script>
+  <script src="static/js/modernizr.min.js"></script>
 
 </head>
 
@@ -141,7 +141,7 @@
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/azmDensityCorrector.rst.txt" rel="nofollow"> View page source</a>
+            <a href="sources/azmDensityCorrector.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -158,17 +158,17 @@
 <span id="azmdensitycorrector-module"></span><h1>azmDensityCorrector module<a class="headerlink" href="#module-azmDensityCorrector" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="azmDensityCorrector.SliceDensityCorrector">
-<em class="property">class </em><code class="descclassname">azmDensityCorrector.</code><code class="descname">SliceDensityCorrector</code><span class="sig-paren">(</span><em>reconstructedFname</em>, <em>kspaceFname</em>, <em>wavelength</em>, <em>voxelsize</em>, <em>comm=None</em>, <em>debug=False</em>, <em>projectionAxis=2</em>, <em>segmentation='voxels'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#SliceDensityCorrector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">azmDensityCorrector.</code><code class="descname">SliceDensityCorrector</code><span class="sig-paren">(</span><em>reconstructedFname</em>, <em>kspaceFname</em>, <em>wavelength</em>, <em>voxelsize</em>, <em>comm=None</em>, <em>debug=False</em>, <em>projectionAxis=2</em>, <em>segmentation='voxels'</em><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#SliceDensityCorrector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="densityCorrector.html#densityCorrector.DensityCorrector" title="densityCorrector.DensityCorrector"><code class="xref py py-class docutils literal"><span class="pre">densityCorrector.DensityCorrector</span></code></a></p>
 <dl class="method">
 <dt id="azmDensityCorrector.SliceDensityCorrector.buildKspace">
-<code class="descname">buildKspace</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#SliceDensityCorrector.buildKspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.buildKspace" title="Permalink to this definition">¶</a></dt>
+<code class="descname">buildKspace</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#SliceDensityCorrector.buildKspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.buildKspace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the scattering pattern using the projection approximation</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="azmDensityCorrector.SliceDensityCorrector.fit">
-<code class="descname">fit</code><span class="sig-paren">(</span><em>nIter=1000</em>, <em>nClusters=6</em>, <em>maxDelta=0.0001</em>, <em>useSeparateClusterAtCenter=False</em>, <em>centerClusterWidth=0</em>, <em>mode='local'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#SliceDensityCorrector.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.fit" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fit</code><span class="sig-paren">(</span><em>nIter=1000</em>, <em>nClusters=6</em>, <em>maxDelta=0.0001</em>, <em>useSeparateClusterAtCenter=False</em>, <em>centerClusterWidth=0</em>, <em>mode='local'</em><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#SliceDensityCorrector.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fit the e-density parameters to the scattering pattern</p>
 <dl class="docutils">
 <dt>nIter: int</dt>
@@ -192,7 +192,7 @@ If useSeparateClusterAtCenter is False this argument is ignored</dd>
 
 <dl class="method">
 <dt id="azmDensityCorrector.SliceDensityCorrector.fitPSO">
-<code class="descname">fitPSO</code><span class="sig-paren">(</span><em>nClusters</em>, <em>nIter=1000</em>, <em>maxDelta=0.0001</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#SliceDensityCorrector.fitPSO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.fitPSO" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fitPSO</code><span class="sig-paren">(</span><em>nClusters</em>, <em>nIter=1000</em>, <em>maxDelta=0.0001</em><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#SliceDensityCorrector.fitPSO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.fitPSO" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform the curve fit using Particle Swarm Optimization from the pyswarm module</p>
 <dl class="docutils">
 <dt>nClusers: int</dt>
@@ -206,7 +206,7 @@ If useSeparateClusterAtCenter is False this argument is ignored</dd>
 
 <dl class="method">
 <dt id="azmDensityCorrector.SliceDensityCorrector.fitSingle">
-<code class="descname">fitSingle</code><span class="sig-paren">(</span><em>maxDelta=0.0001</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#SliceDensityCorrector.fitSingle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.fitSingle" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fitSingle</code><span class="sig-paren">(</span><em>maxDelta=0.0001</em><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#SliceDensityCorrector.fitSingle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.fitSingle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform local optimization from a random initial condisiont</p>
 <dl class="docutils">
 <dt>maxDelta: float</dt>
@@ -216,7 +216,7 @@ If useSeparateClusterAtCenter is False this argument is ignored</dd>
 
 <dl class="method">
 <dt id="azmDensityCorrector.SliceDensityCorrector.merge">
-<code class="descname">merge</code><span class="sig-paren">(</span><em>fname=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#SliceDensityCorrector.merge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.merge" title="Permalink to this definition">¶</a></dt>
+<code class="descname">merge</code><span class="sig-paren">(</span><em>fname=''</em><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#SliceDensityCorrector.merge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.merge" title="Permalink to this definition">¶</a></dt>
 <dd><p>Merges the hdf5 files created by each MPI process.
 If the optimization mode is different from local, the function does nothing.</p>
 <dl class="docutils">
@@ -227,7 +227,7 @@ If the optimization mode is different from local, the function does nothing.</p>
 
 <dl class="method">
 <dt id="azmDensityCorrector.SliceDensityCorrector.needPadding">
-<code class="descname">needPadding</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#SliceDensityCorrector.needPadding"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.needPadding" title="Permalink to this definition">¶</a></dt>
+<code class="descname">needPadding</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#SliceDensityCorrector.needPadding"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.needPadding" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="docutils">
 <dt>Returns: bool</dt>
 <dd>True if the real space object is half the size in each dimension of the
@@ -238,7 +238,7 @@ False otherwise.</dd>
 
 <dl class="method">
 <dt id="azmDensityCorrector.SliceDensityCorrector.plotFit">
-<code class="descname">plotFit</code><span class="sig-paren">(</span><em>means</em>, <em>fig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#SliceDensityCorrector.plotFit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.plotFit" title="Permalink to this definition">¶</a></dt>
+<code class="descname">plotFit</code><span class="sig-paren">(</span><em>means</em>, <em>fig=None</em><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#SliceDensityCorrector.plotFit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.plotFit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot the results of the fit</p>
 <dl class="docutils">
 <dt>means: 1D array</dt>
@@ -252,7 +252,7 @@ False otherwise.</dd>
 
 <dl class="method">
 <dt id="azmDensityCorrector.SliceDensityCorrector.plotSliceKspace">
-<code class="descname">plotSliceKspace</code><span class="sig-paren">(</span><em>fig=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#SliceDensityCorrector.plotSliceKspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.plotSliceKspace" title="Permalink to this definition">¶</a></dt>
+<code class="descname">plotSliceKspace</code><span class="sig-paren">(</span><em>fig=None</em><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#SliceDensityCorrector.plotSliceKspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.plotSliceKspace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots the slice of the measured data</p>
 <dl class="docutils">
 <dt>fig: Matplit figure</dt>
@@ -264,7 +264,7 @@ False otherwise.</dd>
 
 <dl class="method">
 <dt id="azmDensityCorrector.SliceDensityCorrector.residual">
-<code class="descname">residual</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#SliceDensityCorrector.residual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.residual" title="Permalink to this definition">¶</a></dt>
+<code class="descname">residual</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#SliceDensityCorrector.residual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.residual" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the sum of difference squared between the measured and the simulated data</p>
 <dl class="docutils">
 <dt>x: 1D-array</dt>
@@ -274,7 +274,7 @@ False otherwise.</dd>
 
 <dl class="method">
 <dt id="azmDensityCorrector.SliceDensityCorrector.saveAllSliceClusters">
-<code class="descname">saveAllSliceClusters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#SliceDensityCorrector.saveAllSliceClusters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.saveAllSliceClusters" title="Permalink to this definition">¶</a></dt>
+<code class="descname">saveAllSliceClusters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#SliceDensityCorrector.saveAllSliceClusters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.SliceDensityCorrector.saveAllSliceClusters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save all the clusters</p>
 </dd></dl>
 
@@ -282,7 +282,7 @@ False otherwise.</dd>
 
 <dl class="function">
 <dt id="azmDensityCorrector.residualNotInstanceMethod">
-<code class="descclassname">azmDensityCorrector.</code><code class="descname">residualNotInstanceMethod</code><span class="sig-paren">(</span><em>x</em>, <em>instance</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/azmDensityCorrector.html#residualNotInstanceMethod"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.residualNotInstanceMethod" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">azmDensityCorrector.</code><code class="descname">residualNotInstanceMethod</code><span class="sig-paren">(</span><em>x</em>, <em>instance</em><span class="sig-paren">)</span><a class="reference internal" href="modules/azmDensityCorrector.html#residualNotInstanceMethod"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#azmDensityCorrector.residualNotInstanceMethod" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -329,16 +329,16 @@ False otherwise.</dd>
             SOURCELINK_SUFFIX: '.txt'
         };
     </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/underscore.js"></script>
+      <script type="text/javascript" src="static/doctools.js"></script>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
   
   
-    <script type="text/javascript" src="_static/js/theme.js"></script>
+    <script type="text/javascript" src="static/js/theme.js"></script>
   
 
   

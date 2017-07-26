@@ -26,7 +26,7 @@
 
   
   
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="static/css/theme.css" type="text/css" />
   
 
   
@@ -38,7 +38,7 @@
     <link rel="top" title="PyPACE 1.0 documentation" href="index.html"/> 
 
   
-  <script src="_static/js/modernizr.min.js"></script>
+  <script src="static/js/modernizr.min.js"></script>
 
 </head>
 
@@ -141,7 +141,7 @@
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/projectionApprox.rst.txt" rel="nofollow"> View page source</a>
+            <a href="sources/projectionApprox.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -158,7 +158,7 @@
 <span id="projectionapprox-module"></span><h1>projectionApprox module<a class="headerlink" href="#module-projectionApprox" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="projectionApprox.MatrixBuilder3D">
-<em class="property">class </em><code class="descclassname">projectionApprox.</code><code class="descname">MatrixBuilder3D</code><span class="sig-paren">(</span><em>dim</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">projectionApprox.</code><code class="descname">MatrixBuilder3D</code><span class="sig-paren">(</span><em>dim</em><span class="sig-paren">)</span><a class="reference internal" href="modules/projectionApprox.html#MatrixBuilder3D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D" title="Permalink to this definition">¶</a></dt>
 <dd><p>This class builds a 3D matrix from rotated projections
 It assumes that the data is rotated around the x-axis (axis=0)
 It uses linear interpolation between two neighbouring slices to fill
@@ -170,7 +170,7 @@ The matrix is assumed to have shape [dim,dim,dim]</dd>
 </dl>
 <dl class="method">
 <dt id="projectionApprox.MatrixBuilder3D.insert">
-<code class="descname">insert</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.insert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert" title="Permalink to this definition">¶</a></dt>
+<code class="descname">insert</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="modules/projectionApprox.html#MatrixBuilder3D.insert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert" title="Permalink to this definition">¶</a></dt>
 <dd><p>Inserts slices into the 3D matrix</p>
 <dl class="docutils">
 <dt>slice1: ndarray</dt>
@@ -186,35 +186,35 @@ The matrix is assumed to have shape [dim,dim,dim]</dd>
 
 <dl class="method">
 <dt id="projectionApprox.MatrixBuilder3D.insert0to45">
-<code class="descname">insert0to45</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.insert0to45"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert0to45" title="Permalink to this definition">¶</a></dt>
+<code class="descname">insert0to45</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="modules/projectionApprox.html#MatrixBuilder3D.insert0to45"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert0to45" title="Permalink to this definition">¶</a></dt>
 <dd><p>Insert slices when the angle of rotation alpha satisfy 0 &lt; alpha &lt;= 45</p>
 <p>See: :func:’~MatrixBuilder3D.insert’</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="projectionApprox.MatrixBuilder3D.insert135to180">
-<code class="descname">insert135to180</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.insert135to180"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert135to180" title="Permalink to this definition">¶</a></dt>
+<code class="descname">insert135to180</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="modules/projectionApprox.html#MatrixBuilder3D.insert135to180"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert135to180" title="Permalink to this definition">¶</a></dt>
 <dd><p>Insert slices when the angle of rotation alpha satisfy135 &lt; alpha &lt;= 180</p>
 <p>See: :func:’~MatrixBuilder3D.insert’</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="projectionApprox.MatrixBuilder3D.insert45to90">
-<code class="descname">insert45to90</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.insert45to90"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert45to90" title="Permalink to this definition">¶</a></dt>
+<code class="descname">insert45to90</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="modules/projectionApprox.html#MatrixBuilder3D.insert45to90"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert45to90" title="Permalink to this definition">¶</a></dt>
 <dd><p>Insert slices when the angle of rotation alpha satisfy 45 &lt; alpha &lt;= 90</p>
 <p>See: :func:’~MatrixBuilder3D.insert’</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="projectionApprox.MatrixBuilder3D.insert90to135">
-<code class="descname">insert90to135</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.insert90to135"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert90to135" title="Permalink to this definition">¶</a></dt>
+<code class="descname">insert90to135</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="modules/projectionApprox.html#MatrixBuilder3D.insert90to135"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert90to135" title="Permalink to this definition">¶</a></dt>
 <dd><p>Insert slices when the angle of rotation alpha satisfy 90 &lt; alpha &lt;= 135</p>
 <p>See: :func:’~MatrixBuilder3D.insert’</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="projectionApprox.MatrixBuilder3D.plot">
-<code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.plot" title="Permalink to this definition">¶</a></dt>
+<code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="modules/projectionApprox.html#MatrixBuilder3D.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot a slice in the yz-plane of the 3D data</p>
 </dd></dl>
 
@@ -222,7 +222,7 @@ The matrix is assumed to have shape [dim,dim,dim]</dd>
 
 <dl class="class">
 <dt id="projectionApprox.ProjectionPropagator">
-<em class="property">class </em><code class="descclassname">projectionApprox.</code><code class="descname">ProjectionPropagator</code><span class="sig-paren">(</span><em>deltaDistribution</em>, <em>wavelength</em>, <em>voxelsize</em>, <em>kspaceDim=512</em>, <em>maxDeltaValue=5e-05</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#ProjectionPropagator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.ProjectionPropagator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">projectionApprox.</code><code class="descname">ProjectionPropagator</code><span class="sig-paren">(</span><em>deltaDistribution</em>, <em>wavelength</em>, <em>voxelsize</em>, <em>kspaceDim=512</em>, <em>maxDeltaValue=5e-05</em><span class="sig-paren">)</span><a class="reference internal" href="modules/projectionApprox.html#ProjectionPropagator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.ProjectionPropagator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Computes the exit field after propagating across an object using the projection approximation</p>
 <dl class="docutils">
@@ -240,7 +240,7 @@ The matrix is assumed to have shape [dim,dim,dim]</dd>
 </dl>
 <dl class="method">
 <dt id="projectionApprox.ProjectionPropagator.generateKspace">
-<code class="descname">generateKspace</code><span class="sig-paren">(</span><em>angleStepDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#ProjectionPropagator.generateKspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.ProjectionPropagator.generateKspace" title="Permalink to this definition">¶</a></dt>
+<code class="descname">generateKspace</code><span class="sig-paren">(</span><em>angleStepDeg</em><span class="sig-paren">)</span><a class="reference internal" href="modules/projectionApprox.html#ProjectionPropagator.generateKspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.ProjectionPropagator.generateKspace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates full 3D kspace representation from the projection approximation</p>
 <dl class="docutils">
 <dt>angleStepDeg: float</dt>
@@ -252,7 +252,7 @@ The matrix is assumed to have shape [dim,dim,dim]</dd>
 
 <dl class="method">
 <dt id="projectionApprox.ProjectionPropagator.getFarField">
-<code class="descname">getFarField</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#ProjectionPropagator.getFarField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.ProjectionPropagator.getFarField" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getFarField</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="modules/projectionApprox.html#ProjectionPropagator.getFarField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.ProjectionPropagator.getFarField" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the far field scattering pattern based on the projection approxmiation</p>
 </dd></dl>
 
@@ -302,16 +302,16 @@ The matrix is assumed to have shape [dim,dim,dim]</dd>
             SOURCELINK_SUFFIX: '.txt'
         };
     </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="static/jquery.js"></script>
+      <script type="text/javascript" src="static/underscore.js"></script>
+      <script type="text/javascript" src="static/doctools.js"></script>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
   
   
-    <script type="text/javascript" src="_static/js/theme.js"></script>
+    <script type="text/javascript" src="static/js/theme.js"></script>
   
 
   
