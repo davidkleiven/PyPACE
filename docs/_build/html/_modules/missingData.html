@@ -1,0 +1,669 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>missingData &mdash; PyPACE 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="PyPACE 1.0 documentation" href="../index.html"/>
+        <link rel="up" title="Module code" href="index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> PyPACE
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyPACE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>missingData</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for missingData</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;./&quot;</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;pypace&quot;</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;../&quot;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">missingdatac</span> <span class="k">as</span> <span class="nn">mdc</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">config</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">enableShow</span> <span class="p">):</span>
+    <span class="n">mpl</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;Agg&quot;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">pyfftw</span> <span class="k">as</span> <span class="nn">pfw</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">import</span> <span class="nn">subprocess</span> <span class="k">as</span> <span class="nn">sub</span>
+
+<div class="viewcode-block" id="MissingDataAnalyzer"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer">[docs]</a><span class="k">class</span> <span class="nc">MissingDataAnalyzer</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Analyse and can identify structures that only scatters into the region</span>
+<span class="sd">    of missing data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">support</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        MissingDataAnalyzer</span>
+
+<span class="sd">        mask:</span>
+<span class="sd">            3D array of type np.uint8. It is 1 if the voxel is measured and 0 if the voxel is not measured</span>
+<span class="sd">        support:</span>
+<span class="sd">            3D array of type np.uint8. It is 1 if the voxel belongs to the scatterer and zero if it is outside</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">support</span> <span class="o">=</span> <span class="n">support</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.9</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixedPoint</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allErrors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bestImg</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bestError</span> <span class="o">=</span> <span class="mf">1E30</span>
+
+<div class="viewcode-block" id="MissingDataAnalyzer.step"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer.step">[docs]</a>    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">current</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Iterate the solution one step</span>
+
+<span class="sd">        current:</span>
+<span class="sd">            List of the duplicates of the current image</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span> <span class="n">current</span> <span class="p">)</span>
+        <span class="n">pa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectA</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">fB</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="p">)</span>
+        <span class="c1">#assert( np.allclose(x,current) )</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span> <span class="n">current</span> <span class="p">)</span>
+        <span class="n">pb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectB</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">fA</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="p">)</span>
+
+        <span class="c1">#error = np.abs( pa-pb ).max()</span>
+        <span class="c1">#print (&quot;Error: %.2E&quot;%(error))</span>
+        <span class="c1">#current = current + self.beta*( pa-pb )</span>
+        <span class="c1">#error = np.abs( )</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">maxvals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">current</span><span class="p">)):</span>
+            <span class="n">error</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">pa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">pb</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">pb</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="p">)</span>
+            <span class="n">current</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">current</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">*</span><span class="p">(</span> <span class="n">pa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">pb</span> <span class="p">)</span>
+            <span class="n">maxvals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">current</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="p">)</span>
+        <span class="nb">print</span> <span class="p">(</span> <span class="s2">&quot;Error: </span><span class="si">%.2E</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">current</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MissingDataAnalyzer.fA"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer.fA">[docs]</a>    <span class="k">def</span> <span class="nf">fA</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">x</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the fA function from https://en.wikipedia.org/wiki/Difference-map_algorithm</span>
+
+<span class="sd">        x:</span>
+<span class="sd">            List of the duplicates of the object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">pa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectA</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+            <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">pa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">+</span> <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+
+<div class="viewcode-block" id="MissingDataAnalyzer.fB"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer.fB">[docs]</a>    <span class="k">def</span> <span class="nf">fB</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">x</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the fB function in https://en.wikipedia.org/wiki/Difference-map_algorithm</span>
+
+<span class="sd">        x:</span>
+<span class="sd">            List of the duplicates of the object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectB</span><span class="p">(</span> <span class="n">x</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="p">):</span>
+            <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pb</span> <span class="o">+</span> <span class="n">pb</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+
+<div class="viewcode-block" id="MissingDataAnalyzer.projectB"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer.projectB">[docs]</a>    <span class="k">def</span> <span class="nf">projectB</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">x</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Average all the duplicates of the object</span>
+
+<span class="sd">        x:</span>
+<span class="sd">            List of all the duplicates of the object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#self.ftsource[:,:,:] = x</span>
+        <span class="c1">#self.ftForw()</span>
+        <span class="c1">#ft = self.ftdest</span>
+        <span class="c1">#mdc.applyFourier( self, ft )</span>
+        <span class="c1">#self.ftBack()</span>
+        <span class="n">avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="c1"># Normalize</span>
+        <span class="n">totweight</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+            <span class="n">avg</span> <span class="o">+=</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span>
+            <span class="n">totweight</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span>
+        <span class="k">return</span> <span class="n">avg</span><span class="o">/</span><span class="n">totweight</span></div>
+        <span class="c1">#return self.ftsource.real</span>
+
+<div class="viewcode-block" id="MissingDataAnalyzer.projectA"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer.projectA">[docs]</a>    <span class="k">def</span> <span class="nf">projectA</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">x</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply each the constraints to the corresponding duplicate</span>
+
+<span class="sd">        x:</span>
+<span class="sd">            List of all the duplicates of the object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#mdc.applyRealSpace( self, x )</span>
+        <span class="k">assert</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+            <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+
+<div class="viewcode-block" id="MissingDataAnalyzer.plot"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">x</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plots slices in both real space and Fourier space of the image</span>
+
+<span class="sd">        x:</span>
+<span class="sd">            One representation of the object (note not a list of duplicates as in many of the other functions)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">support</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span> <span class="p">)</span>
+        <span class="n">im</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">x</span><span class="p">[</span><span class="n">center</span><span class="p">,:,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;inferno&quot;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">support</span><span class="p">[</span><span class="n">center</span><span class="p">,:,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span> <span class="p">)</span>
+
+        <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">im</span> <span class="o">=</span> <span class="n">ax2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">x</span><span class="p">[:,</span><span class="n">center</span><span class="p">,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;inferno&quot;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">support</span><span class="p">[:,</span><span class="n">center</span><span class="p">,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+        <span class="n">ax3</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">im</span> <span class="o">=</span> <span class="n">ax3</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">x</span><span class="p">[:,:,</span><span class="n">center</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;inferno&quot;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">)</span>
+        <span class="n">ax3</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">support</span><span class="p">[:,:,</span><span class="n">center</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+        <span class="n">msk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+        <span class="n">ft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">ft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">ft</span><span class="p">)</span>
+        <span class="n">ax4</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">ax4</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">ft</span><span class="p">[</span><span class="n">center</span><span class="p">,:,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;nipy_spectral&quot;</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LogNorm</span><span class="p">()</span> <span class="p">)</span>
+        <span class="n">ax4</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">msk</span><span class="p">[</span><span class="n">center</span><span class="p">,:,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+        <span class="n">ax5</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">ax5</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">ft</span><span class="p">[:,</span><span class="n">center</span><span class="p">,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;nipy_spectral&quot;</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LogNorm</span><span class="p">())</span>
+        <span class="n">ax5</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">msk</span><span class="p">[:,</span><span class="n">center</span><span class="p">,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+
+        <span class="n">ax6</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span>
+        <span class="n">ax6</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">ft</span><span class="p">[:,:,</span><span class="n">center</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;nipy_spectral&quot;</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LogNorm</span><span class="p">())</span>
+        <span class="n">ax6</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">msk</span><span class="p">[:,:,</span><span class="n">center</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="MissingDataAnalyzer.plotProgression"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer.plotProgression">[docs]</a>    <span class="k">def</span> <span class="nf">plotProgression</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plots the error on each iteration step</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">allErrors</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="MissingDataAnalyzer.computeConstrainedPower"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer.computeConstrainedPower">[docs]</a>    <span class="k">def</span> <span class="nf">computeConstrainedPower</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">img</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the fraction of constrained power by the realspace constraint and the Fourier constraint</span>
+
+<span class="sd">        img:</span>
+<span class="sd">            The 3D object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">norm1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">img</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">outside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span> <span class="n">img</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">support</span><span class="o">==</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">ft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftn</span><span class="p">(</span><span class="n">img</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">norm2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ft</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">inside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ft</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">==</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">outside</span><span class="o">/</span><span class="n">norm1</span> <span class="o">+</span> <span class="n">inside</span><span class="o">/</span><span class="n">norm2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MissingDataAnalyzer.getMaxVal"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer.getMaxVal">[docs]</a>    <span class="k">def</span> <span class="nf">getMaxVal</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">allimgs</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the maximum value in of all the duplicates</span>
+
+<span class="sd">        allimgs:</span>
+<span class="sd">            List of all the duplicates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">maxval</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1E30</span>
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">allimgs</span><span class="p">:</span>
+            <span class="n">trial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">trial</span> <span class="o">&gt;</span> <span class="n">maxval</span> <span class="p">):</span>
+                <span class="n">maxval</span> <span class="o">=</span> <span class="n">trial</span>
+        <span class="k">return</span> <span class="n">maxval</span></div>
+
+<div class="viewcode-block" id="MissingDataAnalyzer.getImg"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer.getImg">[docs]</a>    <span class="k">def</span> <span class="nf">getImg</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the resulting image</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixedPoint</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Cannot produce image when the solve function is not called&quot;</span><span class="p">)</span>
+        <span class="n">pa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectA</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixedPoint</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectB</span><span class="p">(</span><span class="n">pa</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MissingDataAnalyzer.solve"><a class="viewcode-back" href="../missingData.html#missingData.MissingDataAnalyzer.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">constraints</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">relerror</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zeroLimit</span><span class="o">=</span><span class="mf">0.0</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find a function that satisfy all the constraints given in the constraints list</span>
+
+<span class="sd">        constraints: list</span>
+<span class="sd">            List of constraints that the solution should satisfy</span>
+
+<span class="sd">        nIter: int</span>
+<span class="sd">            Maximum number of iterations</span>
+
+<span class="sd">        relerror: float</span>
+<span class="sd">            If the relative error between the objects produced when applying the different constraints is less</span>
+<span class="sd">            than this number, the solution is found</span>
+
+<span class="sd">        show: bool</span>
+<span class="sd">            If True the plot of the resulting image is shown when the solution has been found or the maximum</span>
+<span class="sd">            number of iterations have been reached</span>
+
+<span class="sd">        initial: ndarray</span>
+<span class="sd">            Initial condition from which the difference map starts from.</span>
+<span class="sd">            Default is None, and then the initial object is filled with random numbers</span>
+
+<span class="sd">        zeroLimit: float</span>
+<span class="sd">            If the maximum value in the image is less than this number, the algorithm stops.</span>
+<span class="sd">            The image is taken to consist of only zeros.</span>
+<span class="sd">            An object consisting of only zeros will in many cases satisfy all the constraint and it is a trivial</span>
+<span class="sd">            solution which is normally is not of interest.</span>
+<span class="sd">            Hence, of the algorithm approaces this solution it can be of interest to just stop and pass another</span>
+<span class="sd">            initial condition.</span>
+
+<span class="sd">        Returns: dictionary</span>
+<span class="sd">            Result dictionay having the keys</span>
+<span class="sd">            message - A message describing the reason for terminating\n</span>
+<span class="sd">            constrainedPower - the constrained power of the solution\n</span>
+<span class="sd">            error - array of the relative error on each iteration step\n</span>
+<span class="sd">            bestError - the minimum relative error\n</span>
+<span class="sd">            status - True if the convergence criteria was reached, and False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span> <span class="o">=</span> <span class="n">constraints</span>
+        <span class="k">for</span> <span class="n">cnst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cnst</span><span class="p">,</span><span class="n">Constraint</span><span class="p">)</span> <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;All constraints need to be of type Constraint&quot;</span><span class="p">)</span>
+
+        <span class="n">shp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">support</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">initial</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">initial</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span> <span class="p">):</span>
+            <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Generating initial state...&quot;</span><span class="p">)</span>
+            <span class="n">initial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">shp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">shp</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">shp</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="p">[</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">initial</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">constraints</span><span class="p">))]</span>
+        <span class="c1">#current = self.support</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+        <span class="n">sub</span><span class="o">.</span><span class="n">call</span><span class="p">([</span><span class="s2">&quot;mkdir&quot;</span><span class="p">,</span><span class="s2">&quot;-p&quot;</span><span class="p">,</span><span class="s2">&quot;localMinima&quot;</span><span class="p">])</span>
+        <span class="n">saveImgNextTimeErrorIncrease</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">niter</span><span class="p">):</span>
+            <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Iteration </span><span class="si">%d</span><span class="s2"> of maximum </span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">niter</span><span class="p">))</span>
+            <span class="n">current</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">(</span> <span class="n">current</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">allErrors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">bestError</span> <span class="p">):</span>
+                <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;New best image...&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bestError</span> <span class="o">=</span> <span class="n">error</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fixedPoint</span> <span class="o">=</span> <span class="n">current</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bestImg</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">getImg</span><span class="p">()</span> <span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="n">relerror</span><span class="p">):</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;Convergence criteria reached&quot;</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+
+            <span class="k">if</span> <span class="p">(</span> <span class="n">error</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">allErrors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="n">saveImgNextTimeErrorIncrease</span> <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fixedPoint</span> <span class="o">=</span> <span class="n">current</span>
+                <span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">getImg</span><span class="p">()</span> <span class="p">)</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;localMinima/img</span><span class="si">%d</span><span class="s2">.png&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+                <span class="n">saveImgNextTimeErrorIncrease</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">saveImgNextTimeErrorIncrease</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">getMaxVal</span><span class="p">(</span><span class="n">current</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">zeroLimit</span> <span class="p">):</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;Approaching the zero solution. Aborted.&quot;</span>
+                <span class="k">break</span>
+
+        <span class="c1"># Now the projection of the image to constraint A also satisfies the constrained B</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixedPoint</span> <span class="o">=</span> <span class="n">current</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getImg</span><span class="p">()</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;data/unconstrained.dat&quot;</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span> <span class="n">fname</span><span class="p">,</span> <span class="n">current</span> <span class="p">)</span>
+        <span class="n">cnstpower</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">computeConstrainedPower</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Constrained power </span><span class="si">%.2E</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">computeConstrainedPower</span><span class="p">(</span><span class="n">current</span><span class="p">)))</span>
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Data written to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+        <span class="nb">print</span> <span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">show</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">bestImg</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plotProgression</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span><span class="n">message</span><span class="p">,</span>
+        <span class="s2">&quot;image&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">bestImg</span><span class="p">,</span>
+        <span class="s2">&quot;constrainedPower&quot;</span><span class="p">:</span><span class="n">cnstpower</span><span class="p">,</span>
+        <span class="s2">&quot;error&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">allErrors</span><span class="p">,</span>
+        <span class="s2">&quot;bestError&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">bestError</span><span class="p">,</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="n">status</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">res</span></div></div>
+
+<span class="c1"># Define constraint classes</span>
+<div class="viewcode-block" id="Constraint"><a class="viewcode-back" href="../missingData.html#missingData.Constraint">[docs]</a><span class="k">class</span> <span class="nc">Constraint</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generic constraint</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">missingData</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mf">1.0</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span> <span class="o">=</span> <span class="n">missingData</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">missingData</span><span class="p">,</span> <span class="n">MissingDataAnalyzer</span> <span class="p">)</span> <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;missingData has to be of type MissingDataAnalyzer&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
+
+<div class="viewcode-block" id="Constraint.apply"><a class="viewcode-back" href="../missingData.html#missingData.Constraint.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">img</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the constraint to img. All child classes has to implement this function.</span>
+
+<span class="sd">        img: ndarray</span>
+<span class="sd">            An array representing the object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Child classes has to implement this function&quot;</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="RealSpaceConstraint"><a class="viewcode-back" href="../missingData.html#missingData.RealSpaceConstraint">[docs]</a><span class="k">class</span> <span class="nc">RealSpaceConstraint</span><span class="p">(</span> <span class="n">Constraint</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Realspace constraint.</span>
+<span class="sd">    Voxels outside the support are set to zero and voxels inside the support</span>
+<span class="sd">    are left unchaged.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">missingData</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mf">1.0</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        RealSpaceConstraint</span>
+
+<span class="sd">        missingData: MissingDataAnalyzer</span>
+<span class="sd">            An instance of the missingDataAnalyzer of which this constraint is passe to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Constraint</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">missingData</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="RealSpaceConstraint.apply"><a class="viewcode-back" href="../missingData.html#missingData.RealSpaceConstraint.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">img</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the realspace constraint. Voxels inside the support of the missingDataAnalyzer are left unchanged,</span>
+<span class="sd">        and voxels outisde are set to zero.</span>
+
+<span class="sd">        img: ndarray</span>
+<span class="sd">            The object on which the constraint is applied</span>
+
+<span class="sd">        Returns: ndarray</span>
+<span class="sd">            The object after the constraint have been applied</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mdc</span><span class="o">.</span><span class="n">applyRealSpace</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span><span class="p">,</span> <span class="n">img</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span></div></div>
+
+<div class="viewcode-block" id="FourierConstraint"><a class="viewcode-back" href="../missingData.html#missingData.FourierConstraint">[docs]</a><span class="k">class</span> <span class="nc">FourierConstraint</span><span class="p">(</span> <span class="n">Constraint</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fourier constraint. Intensity belonging to the region not being measured is left unchanged, and</span>
+<span class="sd">    intensitis in the region of measured data is set to zero.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">missingData</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mf">1.0</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        FourierConstraint</span>
+
+<span class="sd">        missingData: MissingDataAnalyzer</span>
+<span class="sd">            Instance of the missingDataAnaluzer of which the constraint is passed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Constraint</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">missingData</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ftsource</span> <span class="o">=</span> <span class="n">pfw</span><span class="o">.</span><span class="n">empty_aligned</span><span class="p">(</span> <span class="n">missingData</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;complex128&quot;</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ftdest</span> <span class="o">=</span> <span class="n">pfw</span><span class="o">.</span><span class="n">empty_aligned</span><span class="p">(</span> <span class="n">missingData</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;complex128&quot;</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ftForw</span> <span class="o">=</span> <span class="n">pfw</span><span class="o">.</span><span class="n">FFTW</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">ftsource</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ftdest</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="n">threads</span><span class="o">=</span><span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ftBack</span> <span class="o">=</span> <span class="n">pfw</span><span class="o">.</span><span class="n">FFTW</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">ftdest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ftsource</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;FFTW_BACKWARD&quot;</span><span class="p">,</span> <span class="n">threads</span><span class="o">=</span><span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ftsource</span><span class="p">[:,:,:]</span> <span class="o">=</span> <span class="n">missingData</span><span class="o">.</span><span class="n">support</span>
+
+<div class="viewcode-block" id="FourierConstraint.apply"><a class="viewcode-back" href="../missingData.html#missingData.FourierConstraint.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">img</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the Fourier constraint.</span>
+<span class="sd">        Intensities inside the region of measured data is set to zero, and intensities outside this region</span>
+<span class="sd">        is left unchanged</span>
+
+<span class="sd">        img: ndarray</span>
+<span class="sd">            The object of which the constraint is applied</span>
+
+<span class="sd">        Returns: ndarray</span>
+<span class="sd">            The real part of the inverse Fourier transform after the constraint in Fourier domain has been applied</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ftsource</span><span class="p">[:,:,:]</span> <span class="o">=</span> <span class="n">img</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ftForw</span><span class="p">()</span>
+        <span class="n">ft</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ftdest</span>
+        <span class="n">mdc</span><span class="o">.</span><span class="n">applyFourier</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span><span class="p">,</span> <span class="n">ft</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ftBack</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ftsource</span><span class="o">.</span><span class="n">real</span></div></div>
+
+<div class="viewcode-block" id="OrthogonalConstraint"><a class="viewcode-back" href="../missingData.html#missingData.OrthogonalConstraint">[docs]</a><span class="k">class</span> <span class="nc">OrthogonalConstraint</span><span class="p">(</span> <span class="n">Constraint</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Orthogonality constraint.</span>
+<span class="sd">    The image is forced to be orthogonal to this image</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">missingData</span><span class="p">,</span> <span class="n">orthogData</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mf">1.0</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        OrthogonalConstraint.</span>
+
+<span class="sd">        missingData: MissingDataAnalyzer</span>
+<span class="sd">            Instance of the missingDataAnalyzer of which this constraint is passed</span>
+
+<span class="sd">        orthogData: ndarray</span>
+<span class="sd">            Array representing the object of which the solution should be orthogonal to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Constraint</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">missingData</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orthogData</span> <span class="o">=</span> <span class="n">orthogData</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orthogData</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">orthogData</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="OrthogonalConstraint.apply"><a class="viewcode-back" href="../missingData.html#missingData.OrthogonalConstraint.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">img</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the ortogonal constraint.</span>
+<span class="sd">        The object is made orthogonal to the data by subtracting the projecting of the current solution</span>
+<span class="sd">        to the data array passed to this class.</span>
+
+<span class="sd">        img: ndarray</span>
+<span class="sd">            Array of the current object</span>
+
+<span class="sd">        Returns: ndarray</span>
+<span class="sd">            The new object after it has been made orthogonal to the image passed to this object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Project onto</span>
+        <span class="n">proj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span> <span class="n">img</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">orthogData</span> <span class="p">)</span>
+        <span class="n">img</span> <span class="o">-=</span> <span class="n">proj</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">orthogData</span>
+        <span class="k">return</span> <span class="n">img</span></div></div>
+
+<div class="viewcode-block" id="NormalizationConstraint"><a class="viewcode-back" href="../missingData.html#missingData.NormalizationConstraint">[docs]</a><span class="k">class</span> <span class="nc">NormalizationConstraint</span><span class="p">(</span> <span class="n">Constraint</span> <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">missingData</span> <span class="p">):</span>
+        <span class="n">Constraint</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">missingData</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="NormalizationConstraint.apply"><a class="viewcode-back" href="../missingData.html#missingData.NormalizationConstraint.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">img</span> <span class="p">):</span>
+        <span class="n">img</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">img</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, David Kleiven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

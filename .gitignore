@@ -62,7 +62,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+#docs/_build/
 
 # PyBuilder
 target/
@@ -103,3 +103,10 @@ ENV/
 # Additional added
 data/*
 bestIndividuals.csv
+*.png
+tmpOptFiles/*
+*.raw
+*.h5
+pypace/pypaceCythonMP.c
+*.npy
+*.db

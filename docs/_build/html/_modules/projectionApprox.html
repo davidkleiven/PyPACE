@@ -1,0 +1,495 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>projectionApprox &mdash; PyPACE 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="PyPACE 1.0 documentation" href="../index.html"/>
+        <link rel="up" title="Module code" href="index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> PyPACE
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyPACE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>projectionApprox</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for projectionApprox</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">config</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="k">import</span> <span class="n">interpolation</span> <span class="k">as</span> <span class="n">sciinterp</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">enableShow</span> <span class="p">):</span>
+    <span class="n">mpl</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;Agg&quot;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="k">import</span> <span class="n">MPI</span>
+
+<div class="viewcode-block" id="MatrixBuilder3D"><a class="viewcode-back" href="../projectionApprox.html#projectionApprox.MatrixBuilder3D">[docs]</a><span class="k">class</span> <span class="nc">MatrixBuilder3D</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class builds a 3D matrix from rotated projections</span>
+<span class="sd">    It assumes that the data is rotated around the x-axis (axis=0)</span>
+<span class="sd">    It uses linear interpolation between two neighbouring slices to fill</span>
+<span class="sd">    one wedge at the time</span>
+
+<span class="sd">    dim: int</span>
+<span class="sd">        Number of dimensions of one of the directon of the matrix.</span>
+<span class="sd">        The matrix is assumed to have shape [dim,dim,dim]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">dim</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">dim</span><span class="p">,</span><span class="n">dim</span><span class="p">,</span><span class="n">dim</span><span class="p">))</span>
+
+<div class="viewcode-block" id="MatrixBuilder3D.insert"><a class="viewcode-back" href="../projectionApprox.html#projectionApprox.MatrixBuilder3D.insert">[docs]</a>    <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">slice1</span><span class="p">,</span> <span class="n">slice2</span><span class="p">,</span> <span class="n">angleDeg</span><span class="p">,</span> <span class="n">stepAngleDeg</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inserts slices into the 3D matrix</span>
+
+<span class="sd">        slice1: ndarray</span>
+<span class="sd">            2D array containing the first slice in K-space</span>
+
+<span class="sd">        slice2: ndarray</span>
+<span class="sd">            2D array containing the second slicei in K-space</span>
+
+<span class="sd">        angleDeg: float</span>
+<span class="sd">            Angle of the first slice</span>
+
+<span class="sd">        stepAngleDeg: float</span>
+<span class="sd">            Difference between the angle of the first slice and the second slice</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span><span class="p">(</span> <span class="n">slice1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="p">)</span>
+        <span class="k">assert</span><span class="p">(</span> <span class="n">slice1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="p">)</span>
+        <span class="k">assert</span><span class="p">(</span> <span class="n">slice2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="p">)</span>
+        <span class="k">assert</span><span class="p">(</span> <span class="n">slice2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">angleDeg</span> <span class="o">&lt;=</span> <span class="mi">45</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">insert0to45</span><span class="p">(</span> <span class="n">slice1</span><span class="p">,</span> <span class="n">slice2</span><span class="p">,</span> <span class="n">angleDeg</span><span class="p">,</span> <span class="n">stepAngleDeg</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span> <span class="n">angleDeg</span> <span class="o">&lt;=</span> <span class="mi">90</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">insert45to90</span><span class="p">(</span> <span class="n">slice1</span><span class="p">,</span> <span class="n">slice2</span><span class="p">,</span> <span class="n">angleDeg</span><span class="p">,</span> <span class="n">stepAngleDeg</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span> <span class="n">angleDeg</span> <span class="o">&lt;=</span> <span class="mi">135</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">insert90to135</span><span class="p">(</span> <span class="n">slice1</span><span class="p">,</span> <span class="n">slice2</span><span class="p">,</span> <span class="n">angleDeg</span><span class="p">,</span> <span class="n">stepAngleDeg</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span> <span class="n">angleDeg</span> <span class="o">&lt;=</span> <span class="mi">180</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">insert135to180</span><span class="p">(</span> <span class="n">slice1</span><span class="p">,</span> <span class="n">slice2</span><span class="p">,</span> <span class="n">angleDeg</span><span class="p">,</span> <span class="n">stepAngleDeg</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Specify an angle between 0 and 180&quot;</span><span class="p">)</span></div>
+        <span class="c1">#self.plot()</span>
+
+<div class="viewcode-block" id="MatrixBuilder3D.insert0to45"><a class="viewcode-back" href="../projectionApprox.html#projectionApprox.MatrixBuilder3D.insert0to45">[docs]</a>    <span class="k">def</span> <span class="nf">insert0to45</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">slice1</span><span class="p">,</span> <span class="n">slice2</span><span class="p">,</span> <span class="n">angleDeg</span><span class="p">,</span> <span class="n">stepAngleDeg</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Insert slices when the angle of rotation alpha satisfy 0 &lt; alpha &lt;= 45</span>
+
+<span class="sd">        See: :func:&#39;~MatrixBuilder3D.insert&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">angleDeg</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span>
+        <span class="n">dalpha</span> <span class="o">=</span> <span class="n">stepAngleDeg</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span>
+        <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="p">)):</span>
+            <span class="n">zmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">iy</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">alpha</span><span class="p">))</span>
+            <span class="n">zmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">iy</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">alpha</span><span class="o">+</span><span class="n">dalpha</span><span class="p">))</span><span class="o">+</span><span class="mi">1</span>
+            <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">zmin</span><span class="p">,</span><span class="n">zmax</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">iy</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+                    <span class="n">angle</span> <span class="o">=</span> <span class="n">alpha</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">iz</span><span class="o">/</span><span class="n">iy</span><span class="p">)</span>
+
+                <span class="c1">#weight = (iz-zmin)/(zmax-zmin)</span>
+                <span class="n">weight</span> <span class="o">=</span> <span class="p">(</span><span class="n">angle</span><span class="o">-</span><span class="n">alpha</span><span class="p">)</span><span class="o">/</span><span class="n">dalpha</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">weight</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="p">):</span>
+                    <span class="n">weight</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="k">elif</span> <span class="p">(</span> <span class="n">weight</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="p">):</span>
+                    <span class="n">weight</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">radialIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">iy</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">iz</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">radialIndx</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="p">):</span>
+                    <span class="n">yIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">iy</span> <span class="p">)</span>
+                    <span class="n">zIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">iz</span> <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">yIndx</span><span class="p">,</span><span class="n">zIndx</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice1</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">weight</span><span class="p">)</span> <span class="o">+</span> <span class="n">slice2</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="n">weight</span>
+                <span class="n">radialIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">iy</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">iz</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">radialIndx</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">):</span>
+                    <span class="n">yIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="n">iy</span> <span class="p">)</span>
+                    <span class="n">zIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="n">iz</span> <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">yIndx</span><span class="p">,</span><span class="n">zIndx</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice1</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">weight</span><span class="p">)</span> <span class="o">+</span> <span class="n">slice2</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="n">weight</span></div>
+
+<div class="viewcode-block" id="MatrixBuilder3D.insert45to90"><a class="viewcode-back" href="../projectionApprox.html#projectionApprox.MatrixBuilder3D.insert45to90">[docs]</a>    <span class="k">def</span> <span class="nf">insert45to90</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">slice1</span><span class="p">,</span> <span class="n">slice2</span><span class="p">,</span> <span class="n">angleDeg</span><span class="p">,</span> <span class="n">stepAngleDeg</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Insert slices when the angle of rotation alpha satisfy 45 &lt; alpha &lt;= 90</span>
+
+<span class="sd">        See: :func:&#39;~MatrixBuilder3D.insert&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">angleDeg</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span>
+        <span class="n">dalpha</span> <span class="o">=</span> <span class="n">stepAngleDeg</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.0</span><span class="o">-</span><span class="n">alpha</span><span class="o">-</span><span class="n">dalpha</span>
+        <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="p">)):</span>
+            <span class="n">ymin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">iz</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span>
+            <span class="n">ymax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">iz</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">beta</span><span class="o">+</span><span class="n">dalpha</span><span class="p">))</span><span class="o">+</span><span class="mi">1</span>
+            <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ymin</span><span class="p">,</span><span class="n">ymax</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">iz</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+                    <span class="n">angle</span> <span class="o">=</span> <span class="n">beta</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">iy</span><span class="o">/</span><span class="n">iz</span><span class="p">)</span>
+                <span class="n">weight</span> <span class="o">=</span> <span class="p">(</span><span class="n">angle</span><span class="o">-</span><span class="n">beta</span><span class="p">)</span><span class="o">/</span><span class="n">dalpha</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">weight</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="p">):</span>
+                    <span class="n">weight</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="k">elif</span> <span class="p">(</span> <span class="n">weight</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="p">):</span>
+                    <span class="n">weight</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="k">assert</span><span class="p">(</span> <span class="n">weight</span> <span class="o">&gt;=</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="n">weight</span> <span class="o">&lt;=</span> <span class="mf">1.0</span> <span class="p">)</span>
+                <span class="c1">#weight = (iy-ymin)/(ymax-ymin)</span>
+                <span class="n">radialIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">iy</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">iz</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">radialIndx</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="p">):</span>
+                    <span class="n">yIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">iy</span> <span class="p">)</span>
+                    <span class="n">zIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">iz</span> <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">yIndx</span><span class="p">,</span><span class="n">zIndx</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice2</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">weight</span><span class="p">)</span> <span class="o">+</span> <span class="n">slice1</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="n">weight</span>
+                <span class="n">radialIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">iy</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">iz</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">radialIndx</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">):</span>
+                    <span class="n">yIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="n">iy</span> <span class="p">)</span>
+                    <span class="n">zIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="n">iz</span> <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">yIndx</span><span class="p">,</span><span class="n">zIndx</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice2</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">weight</span><span class="p">)</span> <span class="o">+</span> <span class="n">slice1</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="n">weight</span></div>
+
+<div class="viewcode-block" id="MatrixBuilder3D.insert90to135"><a class="viewcode-back" href="../projectionApprox.html#projectionApprox.MatrixBuilder3D.insert90to135">[docs]</a>    <span class="k">def</span> <span class="nf">insert90to135</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">slice1</span><span class="p">,</span> <span class="n">slice2</span><span class="p">,</span> <span class="n">angleDeg</span><span class="p">,</span> <span class="n">stepAngleDeg</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Insert slices when the angle of rotation alpha satisfy 90 &lt; alpha &lt;= 135</span>
+
+<span class="sd">        See: :func:&#39;~MatrixBuilder3D.insert&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">angleDeg</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span>
+        <span class="n">dalpha</span> <span class="o">=</span> <span class="n">stepAngleDeg</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">alpha</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.0</span>
+        <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="p">)):</span>
+            <span class="n">ymax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="o">-</span><span class="n">iz</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">ymin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="o">-</span><span class="n">iz</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">beta</span><span class="o">+</span><span class="n">dalpha</span><span class="p">)</span> <span class="p">)</span>
+            <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ymin</span><span class="p">,</span><span class="n">ymax</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">iz</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+                    <span class="n">angle</span> <span class="o">=</span> <span class="n">beta</span><span class="o">+</span><span class="n">dalpha</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="o">-</span><span class="n">iy</span><span class="o">/</span><span class="n">iz</span><span class="p">)</span>
+                <span class="n">weight</span> <span class="o">=</span> <span class="p">(</span> <span class="n">beta</span><span class="o">+</span><span class="n">dalpha</span><span class="o">-</span><span class="n">angle</span> <span class="p">)</span><span class="o">/</span><span class="n">dalpha</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">weight</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="p">):</span>
+                    <span class="n">weight</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="k">elif</span> <span class="p">(</span> <span class="n">weight</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="p">):</span>
+                    <span class="n">weight</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="c1">#weight = (iy-ymin)/(ymax-ymin)</span>
+                <span class="n">radialIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">iy</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">iz</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">radialIndx</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="p">):</span>
+                    <span class="n">yIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">iy</span> <span class="p">)</span>
+                    <span class="n">zIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">iz</span> <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">yIndx</span><span class="p">,</span><span class="n">zIndx</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice2</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">weight</span><span class="p">)</span> <span class="o">+</span> <span class="n">slice1</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="n">weight</span>
+                <span class="n">radialIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">iy</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">iz</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">radialIndx</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">):</span>
+                    <span class="n">yIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="n">iy</span> <span class="p">)</span>
+                    <span class="n">zIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="n">iz</span> <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">yIndx</span><span class="p">,</span><span class="n">zIndx</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice2</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">weight</span><span class="p">)</span> <span class="o">+</span> <span class="n">slice1</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="n">weight</span></div>
+
+<div class="viewcode-block" id="MatrixBuilder3D.insert135to180"><a class="viewcode-back" href="../projectionApprox.html#projectionApprox.MatrixBuilder3D.insert135to180">[docs]</a>    <span class="k">def</span> <span class="nf">insert135to180</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">slice1</span><span class="p">,</span> <span class="n">slice2</span><span class="p">,</span> <span class="n">angleDeg</span><span class="p">,</span> <span class="n">stepAngleDeg</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Insert slices when the angle of rotation alpha satisfy135 &lt; alpha &lt;= 180</span>
+
+<span class="sd">        See: :func:&#39;~MatrixBuilder3D.insert&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">angleDeg</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span>
+        <span class="n">dalpha</span> <span class="o">=</span> <span class="n">stepAngleDeg</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">-</span><span class="n">alpha</span>
+        <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="p">)):</span>
+            <span class="n">zmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">iy</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">beta</span><span class="o">-</span><span class="n">dalpha</span><span class="p">))</span>
+            <span class="n">zmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">iy</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span><span class="o">+</span><span class="mi">1</span>
+            <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">zmin</span><span class="p">,</span><span class="n">zmax</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">iy</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+                    <span class="n">angle</span> <span class="o">=</span> <span class="n">beta</span><span class="o">-</span><span class="n">dalpha</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">iz</span><span class="o">/</span><span class="n">iy</span><span class="p">)</span>
+                <span class="n">weight</span> <span class="o">=</span> <span class="p">(</span> <span class="n">angle</span> <span class="o">-</span> <span class="n">beta</span><span class="o">+</span><span class="n">dalpha</span> <span class="p">)</span><span class="o">/</span><span class="n">dalpha</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">weight</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="p">):</span>
+                    <span class="n">weight</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="k">elif</span> <span class="p">(</span> <span class="n">weight</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="p">):</span>
+                    <span class="n">weight</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="c1">#weight = (iz-zmin)/(zmax-zmin)</span>
+                <span class="n">radialIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">iy</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">iz</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">radialIndx</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="p">):</span>
+                    <span class="n">yIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">-</span> <span class="n">iy</span> <span class="p">)</span>
+                    <span class="n">zIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="n">iz</span> <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">yIndx</span><span class="p">,</span><span class="n">zIndx</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice2</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">weight</span><span class="p">)</span> <span class="o">+</span> <span class="n">slice1</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="n">weight</span>
+                <span class="n">radialIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">iy</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">iz</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">radialIndx</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">):</span>
+                    <span class="n">yIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="n">iy</span> <span class="p">)</span>
+                    <span class="n">zIndx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="n">iz</span> <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">yIndx</span><span class="p">,</span><span class="n">zIndx</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice2</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">weight</span><span class="p">)</span> <span class="o">+</span> <span class="n">slice1</span><span class="p">[:,</span><span class="n">radialIndx</span><span class="p">]</span><span class="o">*</span><span class="n">weight</span></div>
+
+<div class="viewcode-block" id="MatrixBuilder3D.plot"><a class="viewcode-back" href="../projectionApprox.html#projectionApprox.MatrixBuilder3D.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot a slice in the yz-plane of the 3D data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">centerX</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">centerX</span><span class="p">,:,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;nipy_spectral&quot;</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LogNorm</span><span class="p">(),</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
+
+
+
+<div class="viewcode-block" id="ProjectionPropagator"><a class="viewcode-back" href="../projectionApprox.html#projectionApprox.ProjectionPropagator">[docs]</a><span class="k">class</span> <span class="nc">ProjectionPropagator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the exit field after propagating across an object using the projection approximation</span>
+
+<span class="sd">    deltaDistribution: ndarray</span>
+<span class="sd">        3D array containing the deviation from unitty of the real part of the refractive index</span>
+
+<span class="sd">    wavelength: float</span>
+<span class="sd">        Wavelength of the X-rays in nano meters</span>
+
+<span class="sd">    voxelsize: float</span>
+<span class="sd">        Voxelsize in nano meters</span>
+
+<span class="sd">    kspaceDim: int</span>
+<span class="sd">        Number of elements along one direction of the k-space matrix. The k-space matrix is assumed to have shape</span>
+<span class="sd">        [kspaceDim,kspaceDim,kspaceDim]</span>
+
+<span class="sd">    maxDeltaValue: float</span>
+<span class="sd">        Maximum allowed value for the deviation from unity of the real part of the refractive index</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">deltaDistribution</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">voxelsize</span><span class="p">,</span> <span class="n">kspaceDim</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">maxDeltaValue</span><span class="o">=</span><span class="mf">5E-5</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">=</span> <span class="n">deltaDistribution</span><span class="o">*</span><span class="n">maxDeltaValue</span><span class="o">/</span><span class="n">deltaDistribution</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deltaBackup</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wavelength</span> <span class="o">=</span> <span class="n">wavelength</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voxelsize</span> <span class="o">=</span> <span class="n">voxelsize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kspaceDim</span><span class="o">=</span><span class="n">kspaceDim</span>
+
+<div class="viewcode-block" id="ProjectionPropagator.getFarField"><a class="viewcode-back" href="../projectionApprox.html#projectionApprox.ProjectionPropagator.getFarField">[docs]</a>    <span class="k">def</span> <span class="nf">getFarField</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the far field scattering pattern based on the projection approxmiation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">wavelength</span>
+        <span class="n">proj0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">voxelsize</span>
+        <span class="n">ff0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft2</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">k</span><span class="o">*</span><span class="n">proj0</span><span class="p">)</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kspaceDim</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">kspaceDim</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">ff0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">ff0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ff0</span></div>
+
+<div class="viewcode-block" id="ProjectionPropagator.generateKspace"><a class="viewcode-back" href="../projectionApprox.html#projectionApprox.ProjectionPropagator.generateKspace">[docs]</a>    <span class="k">def</span> <span class="nf">generateKspace</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">angleStepDeg</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates full 3D kspace representation from the projection approximation</span>
+
+<span class="sd">        angleStepDeg: float</span>
+<span class="sd">            Rotation step in degree between successive rotations</span>
+
+<span class="sd">        Returns: ndarray</span>
+<span class="sd">            3D array representing the Fourier space</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span> <span class="mi">180</span><span class="o">/</span><span class="n">angleStepDeg</span> <span class="p">)</span><span class="o">+</span><span class="mi">1</span> <span class="p">)</span>
+        <span class="n">angleStepDeg</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1">#angles *= np.pi/180.0</span>
+
+        <span class="c1"># Initialize the new kspace matrix</span>
+        <span class="n">kspaceBuilder</span> <span class="o">=</span> <span class="n">MatrixBuilder3D</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">kspaceDim</span> <span class="p">)</span>
+
+        <span class="n">ff0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getFarField</span><span class="p">()</span>
+        <span class="n">baseAngle</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">rotDir</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">baseIter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="p">):</span>
+            <span class="c1">#print (angles[i],angles[i+1])</span>
+
+            <span class="c1"># Rotate the material around the x-axis</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">=</span> <span class="n">sciinterp</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deltaBackup</span><span class="p">,</span> <span class="n">angles</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">reshape</span><span class="o">=</span><span class="kc">False</span> <span class="p">)</span>
+
+            <span class="n">ff1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getFarField</span><span class="p">()</span>
+            <span class="n">kspaceBuilder</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span> <span class="n">ff0</span><span class="p">,</span> <span class="n">ff1</span><span class="p">,</span> <span class="n">angles</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">angleStepDeg</span> <span class="p">)</span>
+            <span class="n">ff0</span><span class="p">[:,:]</span> <span class="o">=</span> <span class="n">ff1</span><span class="p">[:,:]</span>
+            <span class="c1">#kspaceBuilder.plot()</span>
+        <span class="k">return</span> <span class="n">kspaceBuilder</span><span class="o">.</span><span class="n">data</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, David Kleiven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

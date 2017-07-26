@@ -1,0 +1,434 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>segmentor &mdash; PyPACE 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="PyPACE 1.0 documentation" href="../index.html"/>
+        <link rel="up" title="Module code" href="index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> PyPACE
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyPACE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>segmentor</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for segmentor</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="s2">&quot;./&quot;</span> <span class="p">)</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">categorize</span> <span class="k">as</span> <span class="nn">catg</span>
+<span class="kn">import</span> <span class="nn">pypaceCython</span> <span class="k">as</span> <span class="nn">pcmp</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">mayavi</span> <span class="k">import</span> <span class="n">mlab</span>
+    <span class="n">haveMayavi</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">))</span>
+    <span class="n">haveMayavi</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="Segmentor"><a class="viewcode-back" href="../segmentor.html#segmentor.Segmentor">[docs]</a><span class="k">class</span> <span class="nc">Segmentor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class that segments an object into clusters based on the voxel value</span>
+
+<span class="sd">    data: ndarray</span>
+<span class="sd">        Array to be segmented</span>
+
+<span class="sd">    comm: MPI.Comm</span>
+<span class="sd">        MPI communicator object. If not given the process will run a single processor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">means</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="o">=</span> <span class="n">comm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">projectedClusters</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">_clusterID</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">newvalue</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">newvalue</span><span class="o">-</span><span class="n">means</span><span class="p">)</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="Segmentor.kmeans"><a class="viewcode-back" href="../segmentor.html#segmentor.Segmentor.kmeans">[docs]</a>    <span class="k">def</span> <span class="nf">kmeans</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">Nclusters</span><span class="p">,</span> <span class="n">maxIter</span><span class="o">=</span><span class="mi">1000</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply k-means clustering to the data</span>
+
+<span class="sd">        Nclusters: int</span>
+<span class="sd">            Number of clusters</span>
+
+<span class="sd">        maxIter: int</span>
+<span class="sd">            Maximum number of iterations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">Nclusters</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">maxIter</span><span class="p">):</span>
+            <span class="n">converged</span> <span class="o">=</span> <span class="n">catg</span><span class="o">.</span><span class="n">categorize</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">converged</span> <span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+                    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;K-means converged in </span><span class="si">%d</span><span class="s2"> iterations&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+                        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;K-means converged in </span><span class="si">%d</span><span class="s2"> iterations&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+                <span class="k">return</span>
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Warning! Max number of iterations in the kmeans was reached&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Segmentor.createSeparateClusterCenter"><a class="viewcode-back" href="../segmentor.html#segmentor.Segmentor.createSeparateClusterCenter">[docs]</a>    <span class="k">def</span> <span class="nf">createSeparateClusterCenter</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">width</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extracts the center of the object and creates a separate cluster for it</span>
+
+<span class="sd">        width: int</span>
+<span class="sd">            Width of the cubic region in voxels</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">maxID</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">)</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span> <span class="p">)</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">[</span><span class="n">center</span><span class="o">-</span><span class="n">delta</span><span class="p">:</span><span class="n">center</span><span class="o">+</span><span class="n">delta</span><span class="p">,</span><span class="n">center</span><span class="o">-</span><span class="n">delta</span><span class="p">:</span><span class="n">center</span><span class="o">+</span><span class="n">delta</span><span class="p">,</span><span class="n">center</span><span class="o">-</span><span class="n">delta</span><span class="p">:</span><span class="n">center</span><span class="o">+</span><span class="n">delta</span><span class="p">]</span> <span class="o">=</span> <span class="n">maxID</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Segmentor.replaceDataWithMeans"><a class="viewcode-back" href="../segmentor.html#segmentor.Segmentor.replaceDataWithMeans">[docs]</a>    <span class="k">def</span> <span class="nf">replaceDataWithMeans</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Replacte the data values with the mean of the cluster it belongs to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">)</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="o">==</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Segmentor.getSingleCluster"><a class="viewcode-back" href="../segmentor.html#segmentor.Segmentor.getSingleCluster">[docs]</a>    <span class="k">def</span> <span class="nf">getSingleCluster</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">clusterIndx</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        clusterIndx: int</span>
+<span class="sd">            ID of the cluster to return</span>
+<span class="sd">        Returns: ndarray</span>
+<span class="sd">            3D array of voxels that belong to the same cluster</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="o">==</span><span class="n">clusterIndx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+<div class="viewcode-block" id="Segmentor.projectClusters"><a class="viewcode-back" href="../segmentor.html#segmentor.Segmentor.projectClusters">[docs]</a>    <span class="k">def</span> <span class="nf">projectClusters</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Project clusters along an axis</span>
+
+<span class="sd">        axis: int</span>
+<span class="sd">            Axis to project along. Has to be 0,1 or 2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">projectedClusters</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mpArgs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">clusterID</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">means</span><span class="p">)):</span>
+            <span class="n">proj</span> <span class="o">=</span> <span class="n">ProjectedCluster</span><span class="p">(</span><span class="n">clusterID</span><span class="p">)</span>
+            <span class="n">proj</span><span class="o">.</span><span class="n">project</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">,</span> <span class="n">axis</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">projectedClusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">proj</span><span class="p">)</span></div>
+            <span class="c1">#mpArgs.append([proj,axis])</span>
+
+        <span class="c1">#workers = mp.Pool( processes=mp.cpu_count() )</span>
+        <span class="c1">#workers.map( self._projParallel, mpArgs )</span>
+
+    <span class="k">def</span> <span class="nf">_projParallel</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">args</span> <span class="p">):</span>
+        <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">project</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="Segmentor.plotAllSlices"><a class="viewcode-back" href="../segmentor.html#segmentor.Segmentor.plotAllSlices">[docs]</a>    <span class="k">def</span> <span class="nf">plotAllSlices</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot cut planes through all clusters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projectedClusters</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+            <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;There are no clusters. Have the 3D matrix been reconstructed yet?&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">projectedClusters</span><span class="p">)):</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">projectedClusters</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;figures/azm</span><span class="si">%d</span><span class="s2">.png&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Segmentor.plotCluster"><a class="viewcode-back" href="../segmentor.html#segmentor.Segmentor.plotCluster">[docs]</a>    <span class="k">def</span> <span class="nf">plotCluster</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">clusterID</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="mi">4</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot single cluster using Mayavi</span>
+
+<span class="sd">        clusterID: int</span>
+<span class="sd">            ID of the cluster to plot</span>
+
+<span class="sd">        downsample: int</span>
+<span class="sd">            Downsampling factor. An a standard computer Mayavi runs slow for large datasets.</span>
+<span class="sd">            Hence, it may be an advatage to reduce the array before plotting it</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="n">haveMayavi</span> <span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span> <span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span> <span class="p">)</span>
+        <span class="n">mask</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="o">==</span><span class="n">clusterID</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Downsample by summing</span>
+        <span class="n">Nx</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">Ny</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">Nz</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">dsMask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">Nx</span><span class="o">/</span><span class="n">downsample</span><span class="p">),</span><span class="n">Ny</span><span class="p">,</span><span class="n">Nz</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">dsMask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">dsMask</span><span class="p">[</span><span class="n">i</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">[</span><span class="n">current</span><span class="p">:</span><span class="n">current</span><span class="o">+</span><span class="n">downsample</span><span class="p">,:,:],</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">current</span> <span class="o">+=</span> <span class="n">downsample</span>
+
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">dsMask</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">dsMask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">Nx</span><span class="o">/</span><span class="n">downsample</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">Ny</span><span class="o">/</span><span class="n">downsample</span><span class="p">),</span> <span class="n">Nz</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">dsMask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">dsMask</span><span class="p">[:,</span><span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span> <span class="n">mask</span><span class="p">[:,</span><span class="n">current</span><span class="p">:</span><span class="n">current</span><span class="o">+</span><span class="n">downsample</span><span class="p">,:],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span> <span class="p">)</span>
+            <span class="n">current</span> <span class="o">+=</span> <span class="n">downsample</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">dsMask</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">dsMask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">Nx</span><span class="o">/</span><span class="n">downsample</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">Ny</span><span class="o">/</span><span class="n">downsample</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">Nz</span><span class="o">/</span><span class="n">downsample</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">dsMask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
+            <span class="n">dsMask</span><span class="p">[:,:,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">[:,:,</span><span class="n">current</span><span class="p">:</span><span class="n">current</span><span class="o">+</span><span class="n">downsample</span><span class="p">],</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">current</span> <span class="o">+=</span> <span class="n">downsample</span>
+
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">dsMask</span>
+        <span class="c1">#mask = mask[::downsample,::downsample,::downsample]</span>
+        <span class="c1">#if ( mask.max() != 1 ):</span>
+        <span class="c1">#    return</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">scalar_field</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+        <span class="c1">#vol = mlab.pipeline.volume( src )</span>
+        <span class="c1">#mlab.pipeline.threshold( vol, low=0.5 )</span>
+        <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">scalar_cut_plane</span><span class="p">(</span> <span class="n">src</span><span class="p">,</span> <span class="n">plane_orientation</span><span class="o">=</span><span class="s2">&quot;x_axes&quot;</span><span class="p">)</span>
+        <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">scalar_cut_plane</span><span class="p">(</span> <span class="n">src</span><span class="p">,</span> <span class="n">plane_orientation</span><span class="o">=</span><span class="s2">&quot;y_axes&quot;</span><span class="p">)</span>
+        <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">scalar_cut_plane</span><span class="p">(</span> <span class="n">src</span><span class="p">,</span> <span class="n">plane_orientation</span><span class="o">=</span><span class="s2">&quot;z_axes&quot;</span><span class="p">)</span>
+        <span class="n">mlab</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="ProjectedCluster"><a class="viewcode-back" href="../segmentor.html#segmentor.ProjectedCluster">[docs]</a><span class="k">class</span> <span class="nc">ProjectedCluster</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class containing a projected cluster</span>
+
+<span class="sd">    id: int</span>
+<span class="sd">        ID of the cluster</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="nb">id</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
+
+<div class="viewcode-block" id="ProjectedCluster.project"><a class="viewcode-back" href="../segmentor.html#segmentor.ProjectedCluster.project">[docs]</a>    <span class="k">def</span> <span class="nf">project</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">clusters</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Project cluster along axis</span>
+
+<span class="sd">        clusters: ndarray</span>
+<span class="sd">            Array containning the cluster ID of each voxel</span>
+
+<span class="sd">        axis: int</span>
+<span class="sd">            Axis to project along. Has to be 0,1 or 2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span><span class="p">(</span> <span class="n">clusters</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">clusters</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">assert</span><span class="p">(</span> <span class="n">clusters</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">clusters</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">clusters</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="n">N</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="n">pcmp</span><span class="o">.</span><span class="n">projectCluster</span><span class="p">(</span> <span class="n">clusters</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="n">axis</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="ProjectedCluster.plot"><a class="viewcode-back" href="../segmentor.html#segmentor.ProjectedCluster.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the azimuthally averaged domain</span>
+
+<span class="sd">        fig: Matplotlib figure</span>
+<span class="sd">            If given the plot will be added to the figure, otherwise a new figure is created</span>
+
+<span class="sd">        Returns: fig</span>
+<span class="sd">            Instance of the figure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span> <span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span> <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, David Kleiven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,473 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>eDensityVisualizer &mdash; PyPACE 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="PyPACE 1.0 documentation" href="../index.html"/>
+        <link rel="up" title="Module code" href="index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> PyPACE
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyPACE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>eDensityVisualizer</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for eDensityVisualizer</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">h5py</span> <span class="k">as</span> <span class="nn">hf</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">mayavi</span> <span class="k">import</span> <span class="n">mlab</span>
+    <span class="n">haveMayavi</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">))</span>
+    <span class="n">haveMayavi</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="kn">import</span> <span class="nn">h5py</span> <span class="k">as</span> <span class="nn">h5</span>
+<span class="kn">import</span> <span class="nn">segmentor</span> <span class="k">as</span> <span class="nn">seg</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;svg.fonttype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+<span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;axes.unicode_minus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">categorize</span> <span class="k">as</span> <span class="nn">catg</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">ndimage</span> <span class="k">as</span> <span class="n">ndimg</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">misc</span> <span class="k">as</span> <span class="n">msc</span>
+
+<div class="viewcode-block" id="EDensityVisualizer"><a class="viewcode-back" href="../eDensityVisualizer.html#eDensityVisualizer.EDensityVisualizer">[docs]</a><span class="k">class</span> <span class="nc">EDensityVisualizer</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class for visualizing the fitted real part of the refractive index</span>
+
+<span class="sd">    fname: str</span>
+<span class="sd">        Filename to the HDF5 file containing the fits. Only the best fit from this file is used</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="s2">&quot;&quot;</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fname</span> <span class="o">=</span> <span class="n">fname</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ff</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sliceK</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="n">fname</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span> <span class="p">):</span>
+            <span class="k">with</span> <span class="n">h5</span><span class="o">.</span><span class="n">File</span><span class="p">(</span> <span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">hf</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="s2">&quot;clusters&quot;</span> <span class="ow">in</span> <span class="n">hf</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No dataset named clusters in the given hdf5 file&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">hf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clusters&quot;</span><span class="p">)</span> <span class="p">)</span>
+
+                <span class="k">if</span> <span class="p">(</span> <span class="s2">&quot;bestFarField&quot;</span> <span class="ow">in</span> <span class="n">hf</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">hf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bestFarField&quot;</span><span class="p">)</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="s2">&quot;sliceK&quot;</span> <span class="ow">in</span> <span class="n">hf</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sliceK</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">hf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sliceK&quot;</span><span class="p">)</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="s2">&quot;mask&quot;</span> <span class="ow">in</span> <span class="n">hf</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">hf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mask&quot;</span><span class="p">)</span> <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">segdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">Segmentor</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">segdata</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">clusters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span>
+
+<div class="viewcode-block" id="EDensityVisualizer.getBest"><a class="viewcode-back" href="../eDensityVisualizer.html#eDensityVisualizer.EDensityVisualizer.getBest">[docs]</a>    <span class="k">def</span> <span class="nf">getBest</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract the dataset with that best fits the experimental data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bestVal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">bestDset</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">with</span> <span class="n">h5</span><span class="o">.</span><span class="n">File</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">hf</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">gname</span> <span class="ow">in</span> <span class="n">hf</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">group</span> <span class="o">=</span> <span class="n">hf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">gname</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="n">h5</span><span class="o">.</span><span class="n">Group</span><span class="p">)</span> <span class="p">):</span>
+                    <span class="k">continue</span>
+
+                <span class="k">for</span> <span class="n">dsetname</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">dset</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dsetname</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="p">(</span> <span class="n">dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;cost&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">bestVal</span> <span class="p">):</span>
+                        <span class="n">bestVal</span> <span class="o">=</span> <span class="n">dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;cost&quot;</span><span class="p">]</span>
+                        <span class="n">bestDset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dset</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">bestDset</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Best dataset is None, meaning that an error occured when searching for the best dataset&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bestDset</span></div>
+
+<div class="viewcode-block" id="EDensityVisualizer.getEdensity"><a class="viewcode-back" href="../eDensityVisualizer.html#eDensityVisualizer.EDensityVisualizer.getEdensity">[docs]</a>    <span class="k">def</span> <span class="nf">getEdensity</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">dset</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the real part of the refractive index</span>
+
+<span class="sd">        dset: 1D array</span>
+<span class="sd">            Array containing the mean value in each cluster</span>
+
+<span class="sd">        Return: ndarray</span>
+<span class="sd">            3D array where the value in each cluster is replaced by its mean</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span> <span class="o">=</span> <span class="n">dset</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">replaceDataWithMeans</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">data</span></div>
+
+<div class="viewcode-block" id="EDensityVisualizer.plotOutline"><a class="viewcode-back" href="../eDensityVisualizer.html#eDensityVisualizer.EDensityVisualizer.plotOutline">[docs]</a>    <span class="k">def</span> <span class="nf">plotOutline</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the surface of the fitted electron density</span>
+
+<span class="sd">        data: ndarray</span>
+<span class="sd">            If given this dataset is used. Otherwise the best dataset from the fitting is used</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">bestDset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBest</span><span class="p">()</span>
+            <span class="n">edensity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getEdensity</span><span class="p">(</span><span class="n">bestDset</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">edensity</span> <span class="o">=</span> <span class="n">data</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="n">haveMayavi</span> <span class="p">):</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span> <span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">scalar_field</span><span class="p">(</span><span class="n">edensity</span><span class="p">)</span>
+            <span class="c1">#vol = mlab.pipeline.volume( src )</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">contour_surface</span><span class="p">(</span> <span class="n">src</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="EDensityVisualizer.plotBest"><a class="viewcode-back" href="../eDensityVisualizer.html#eDensityVisualizer.EDensityVisualizer.plotBest">[docs]</a>    <span class="k">def</span> <span class="nf">plotBest</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a 3D plot data</span>
+
+<span class="sd">        data: ndarray</span>
+<span class="sd">            If given this data is used. Otherwise the best dataset from the fitting is used</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">bestDset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBest</span><span class="p">()</span>
+            <span class="n">edensity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getEdensity</span><span class="p">(</span><span class="n">bestDset</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">edensity</span> <span class="o">=</span> <span class="n">data</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="n">haveMayavi</span> <span class="p">):</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span> <span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+            <span class="c1"># Create 3D plot using Mayavi</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">scalar_field</span><span class="p">(</span><span class="n">edensity</span><span class="p">)</span>
+            <span class="c1">#mlab.pipeline.iso_surface( src, opacity=0.1 )</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">scalar_cut_plane</span><span class="p">(</span> <span class="n">src</span><span class="p">,</span> <span class="n">colormap</span><span class="o">=</span><span class="s2">&quot;plasma&quot;</span> <span class="p">)</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">scalar_cut_plane</span><span class="p">(</span> <span class="n">src</span><span class="p">,</span> <span class="n">plane_orientation</span><span class="o">=</span><span class="s2">&quot;y_axes&quot;</span><span class="p">,</span> <span class="n">colormap</span><span class="o">=</span><span class="s2">&quot;plasma&quot;</span> <span class="p">)</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">scalar_cut_plane</span><span class="p">(</span> <span class="n">src</span><span class="p">,</span> <span class="n">plane_orientation</span><span class="o">=</span><span class="s2">&quot;z_axes&quot;</span><span class="p">,</span> <span class="n">colormap</span><span class="o">=</span><span class="s2">&quot;plasma&quot;</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="EDensityVisualizer.plotCluster"><a class="viewcode-back" href="../eDensityVisualizer.html#eDensityVisualizer.EDensityVisualizer.plotCluster">[docs]</a>    <span class="k">def</span> <span class="nf">plotCluster</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="mi">4</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot clusters</span>
+
+<span class="sd">        id: int</span>
+<span class="sd">            ID of the cluster to plot</span>
+
+<span class="sd">        downsample: int</span>
+<span class="sd">            Factor to downsample the array in each direction.</span>
+<span class="sd">            This makes Mayavi faster.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">haveMayavi</span> <span class="p">):</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+            <span class="n">mask</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="o">==</span><span class="nb">id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="p">[::</span><span class="n">downsample</span><span class="p">,::</span><span class="n">downsample</span><span class="p">,::</span><span class="n">downsample</span><span class="p">]</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">scalar_field</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+            <span class="n">vol</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">volume</span><span class="p">(</span> <span class="n">src</span> <span class="p">)</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">pipeline</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span> <span class="n">vol</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mf">0.5</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="EDensityVisualizer.plotBestRadialAveragedDensity"><a class="viewcode-back" href="../eDensityVisualizer.html#eDensityVisualizer.EDensityVisualizer.plotBestRadialAveragedDensity">[docs]</a>    <span class="k">def</span> <span class="nf">plotBestRadialAveragedDensity</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the radial averaged density</span>
+
+<span class="sd">        Returns: Matplotlib figure</span>
+<span class="sd">            Figure where the plot is</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bestDset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBest</span><span class="p">()</span>
+        <span class="n">edensity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getEdensity</span><span class="p">(</span><span class="n">bestDset</span><span class="p">)</span>
+        <span class="n">Nbins</span><span class="o">=</span><span class="mi">300</span>
+        <span class="n">rbins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">Nbins</span><span class="p">)</span>
+        <span class="n">radialMean</span> <span class="o">=</span> <span class="n">catg</span><span class="o">.</span><span class="n">radialMean</span><span class="p">(</span> <span class="n">edensity</span><span class="p">,</span> <span class="n">Nbins</span> <span class="p">)</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rbins</span><span class="p">,</span> <span class="n">radialMean</span> <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Radial position&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="EDensityVisualizer.plot1DAngles"><a class="viewcode-back" href="../eDensityVisualizer.html#eDensityVisualizer.EDensityVisualizer.plot1DAngles">[docs]</a>    <span class="k">def</span> <span class="nf">plot1DAngles</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">anglesDeg</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the density along different lines in the XY plane</span>
+
+<span class="sd">        anglesDeg: list</span>
+<span class="sd">            List if angles at which to plot the electron density along</span>
+
+<span class="sd">        data: ndarray</span>
+<span class="sd">            If given this dataset is used. Otherwise the best dataset from the fit is used</span>
+
+<span class="sd">        Returns: Matplotlib figure</span>
+<span class="sd">            Figure of the plot</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">bestDset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBest</span><span class="p">()</span>
+            <span class="n">edensity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getEdensity</span><span class="p">(</span><span class="n">bestDset</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">edensity</span> <span class="o">=</span> <span class="n">data</span>
+
+        <span class="n">N</span> <span class="o">=</span> <span class="n">edensity</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span> <span class="o">-</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">N</span> <span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span> <span class="o">-</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">N</span> <span class="p">)</span>
+        <span class="n">xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">rotMatrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">anglesDeg</span> <span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span>
+        <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;#e41a1c&quot;</span><span class="p">,</span> <span class="s2">&quot;#377eb8&quot;</span><span class="p">,</span> <span class="s2">&quot;#4daf4a&quot;</span><span class="p">,</span> <span class="s2">&quot;#984ea3&quot;</span><span class="p">,</span> <span class="s2">&quot;#ff7f00&quot;</span><span class="p">,</span> <span class="s2">&quot;#ffff33&quot;</span><span class="p">,</span> <span class="s2">&quot;#a65628&quot;</span><span class="p">,</span> <span class="s2">&quot;#f781bf&quot;</span><span class="p">,</span> <span class="s2">&quot;#999999&quot;</span><span class="p">]</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">angle</span> <span class="ow">in</span> <span class="n">angles</span><span class="p">:</span>
+            <span class="c1"># XY-plane</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">rotMatrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+            <span class="n">rotMatrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+            <span class="n">rotMatrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+            <span class="n">rotMatrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+            <span class="n">xyprime</span> <span class="o">=</span> <span class="n">rotMatrix</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">xy</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">edensity</span><span class="p">[:,:,</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">lineData</span> <span class="o">=</span> <span class="n">ndimg</span><span class="o">.</span><span class="n">map_coordinates</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="n">xyprime</span><span class="p">)</span><span class="o">*</span><span class="mf">1E6</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="n">lineData</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">counter</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">angle</span><span class="o">*</span><span class="mi">180</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+            <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Position&quot;</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Density (a.u.)&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="EDensityVisualizer.plotFit"><a class="viewcode-back" href="../eDensityVisualizer.html#eDensityVisualizer.EDensityVisualizer.plotFit">[docs]</a>    <span class="k">def</span> <span class="nf">plotFit</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare the simulated and the measured scattering pattern</span>
+
+<span class="sd">        Returns: Matplotlib figure</span>
+<span class="sd">            Figure of the plots</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceK</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceK</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;nipy_spectral&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span> <span class="p">)</span>
+        <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ff</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">ax2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">ff</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;nipy_spectral&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+        <span class="n">ax3</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="n">hasMeasuredAndSimulated</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceK</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ff</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">hasMeasuredAndSimulated</span> <span class="p">):</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceK</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ff</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+                <span class="n">diff</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">==</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="n">ax3</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">diff</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;nipy_spectral&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+
+        <span class="n">ax4</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceK</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">hasMeasuredAndSimulated</span> <span class="p">):</span>
+            <span class="n">ax4</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceK</span><span class="p">[:,</span><span class="n">center</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#e41a1c&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Meas&quot;</span> <span class="p">)</span>
+            <span class="n">ax4</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">ff</span><span class="p">[:,</span><span class="n">center</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#377eb8&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Fit&quot;</span> <span class="p">)</span>
+            <span class="n">ax4</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+
+        <span class="n">ax5</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">hasMeasuredAndSimulated</span> <span class="p">):</span>
+            <span class="n">ax5</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceK</span><span class="p">[</span><span class="n">center</span><span class="p">,:],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#e41a1c&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Meas&quot;</span> <span class="p">)</span>
+            <span class="n">ax5</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">ff</span><span class="p">[</span><span class="n">center</span><span class="p">,:],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#377eb8&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Fit&quot;</span> <span class="p">)</span>
+            <span class="n">ax5</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+        <span class="n">ax6</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">ax6</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, David Kleiven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -15,6 +15,10 @@ class MatrixBuilder3D:
     It assumes that the data is rotated around the x-axis (axis=0)
     It uses linear interpolation between two neighbouring slices to fill
     one wedge at the time
+
+    dim: int
+        Number of dimensions of one of the directon of the matrix.
+        The matrix is assumed to have shape [dim,dim,dim]
     """
     def __init__( self, dim ):
         self.dim = dim
@@ -23,6 +27,18 @@ class MatrixBuilder3D:
     def insert( self, slice1, slice2, angleDeg, stepAngleDeg ):
         """
         Inserts slices into the 3D matrix
+
+        slice1: ndarray
+            2D array containing the first slice in K-space
+
+        slice2: ndarray
+            2D array containing the second slicei in K-space
+
+        angleDeg: float
+            Angle of the first slice
+
+        stepAngleDeg: float
+            Difference between the angle of the first slice and the second slice
         """
         assert( slice1.shape[0] == self.dim )
         assert( slice1.shape[1] == self.dim )
@@ -43,6 +59,8 @@ class MatrixBuilder3D:
     def insert0to45( self, slice1, slice2, angleDeg, stepAngleDeg ):
         """
         Insert slices when the angle of rotation alpha satisfy 0 < alpha <= 45
+
+        See: :func:'~MatrixBuilder3D.insert'
         """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
@@ -75,6 +93,8 @@ class MatrixBuilder3D:
     def insert45to90( self, slice1, slice2, angleDeg, stepAngleDeg ):
         """
         Insert slices when the angle of rotation alpha satisfy 45 < alpha <= 90
+
+        See: :func:'~MatrixBuilder3D.insert'
         """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
@@ -108,6 +128,8 @@ class MatrixBuilder3D:
     def insert90to135( self, slice1, slice2, angleDeg, stepAngleDeg ):
         """
         Insert slices when the angle of rotation alpha satisfy 90 < alpha <= 135
+
+        See: :func:'~MatrixBuilder3D.insert'
         """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
@@ -140,6 +162,8 @@ class MatrixBuilder3D:
     def insert135to180( self, slice1, slice2, angleDeg, stepAngleDeg ):
         """
         Insert slices when the angle of rotation alpha satisfy135 < alpha <= 180
+
+        See: :func:'~MatrixBuilder3D.insert'
         """
         alpha = angleDeg*np.pi/180.0
         dalpha = stepAngleDeg*np.pi/180.0
@@ -180,6 +204,25 @@ class MatrixBuilder3D:
 
 
 class ProjectionPropagator(object):
+    """
+    Computes the exit field after propagating across an object using the projection approximation
+
+    deltaDistribution: ndarray
+        3D array containing the deviation from unitty of the real part of the refractive index
+
+    wavelength: float
+        Wavelength of the X-rays in nano meters
+
+    voxelsize: float
+        Voxelsize in nano meters
+
+    kspaceDim: int
+        Number of elements along one direction of the k-space matrix. The k-space matrix is assumed to have shape
+        [kspaceDim,kspaceDim,kspaceDim]
+
+    maxDeltaValue: float
+        Maximum allowed value for the deviation from unity of the real part of the refractive index
+    """
     def __init__( self, deltaDistribution, wavelength, voxelsize, kspaceDim=512, maxDeltaValue=5E-5 ):
         self.delta = deltaDistribution*maxDeltaValue/deltaDistribution.max()
         self.deltaBackup = copy.deepcopy(self.delta)
@@ -200,6 +243,12 @@ class ProjectionPropagator(object):
     def generateKspace( self, angleStepDeg ):
         """
         Generates full 3D kspace representation from the projection approximation
+
+        angleStepDeg: float
+            Rotation step in degree between successive rotations
+
+        Returns: ndarray
+            3D array representing the Fourier space
         """
         angles = np.linspace( 0, 180, int( 180/angleStepDeg )+1 )
         angleStepDeg = angles[1]-angles[0]

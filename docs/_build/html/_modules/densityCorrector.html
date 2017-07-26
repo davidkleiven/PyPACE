@@ -1,0 +1,552 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>densityCorrector &mdash; PyPACE 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="PyPACE 1.0 documentation" href="../index.html"/>
+        <link rel="up" title="Module code" href="index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> PyPACE
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyPACE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>densityCorrector</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for densityCorrector</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">config</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">enableShow</span> <span class="p">):</span>
+    <span class="n">mpl</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;Agg&quot;</span><span class="p">)</span>
+<span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;svg.fonttype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+<span class="n">mpl</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;axes.unicode_minus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">segmentor</span> <span class="k">as</span> <span class="nn">seg</span>
+<span class="kn">import</span> <span class="nn">qWeighting</span> <span class="k">as</span> <span class="nn">qw</span>
+<span class="kn">import</span> <span class="nn">projectionApprox</span> <span class="k">as</span> <span class="nn">pa</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="k">import</span> <span class="n">interpolation</span> <span class="k">as</span> <span class="n">sciinterp</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">import</span> <span class="nn">geneticAlgorithm</span> <span class="k">as</span> <span class="nn">ga</span>
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="k">import</span> <span class="n">MPI</span>
+<span class="kn">import</span> <span class="nn">pickle</span> <span class="k">as</span> <span class="nn">pck</span>
+
+
+<div class="viewcode-block" id="DensityCorrector"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector">[docs]</a><span class="k">class</span> <span class="nc">DensityCorrector</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Main class for correcting the density obtained by the phase retrieval algorithm</span>
+
+
+<span class="sd">    reconstructedFname: str</span>
+<span class="sd">        Filename where the image reconstructed with the phase retrieval algorithm</span>
+
+<span class="sd">    kspaceFname: str</span>
+<span class="sd">        Filename of the the 3D scattering data</span>
+
+<span class="sd">    wavelength: float</span>
+<span class="sd">        Wavelength of the incoming X-ray beam in nano meters</span>
+
+<span class="sd">    voxelsize: float</span>
+<span class="sd">        Size of the voxels in nano meters</span>
+
+<span class="sd">    comm: MPI.comm</span>
+<span class="sd">        MPI communicator object. If None, the process run on a single core</span>
+
+<span class="sd">    debug: bool</span>
+<span class="sd">        If True debug messages will be printed.</span>
+
+<span class="sd">    segmentation: str</span>
+<span class="sd">        Algorithm used for segmentation. Currently this has to be voxels</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reconstructedFname</span><span class="p">,</span> <span class="n">kspaceFname</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">voxelsize</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">segmentation</span><span class="o">=</span><span class="s2">&quot;voxels&quot;</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        DensityCorrector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span> <span class="n">reconstructedFname</span> <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kspace</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span> <span class="n">kspaceFname</span> <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kspaceIntegral</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="n">segmentation</span><span class="o">==</span><span class="s2">&quot;voxels&quot;</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">Segmentor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span> <span class="n">segmentation</span><span class="o">==</span><span class="s2">&quot;shell&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span> <span class="o">=</span> <span class="n">sseg</span><span class="o">.</span><span class="n">ShellSegmentor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;seg has to be voxels or shell&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qweight</span> <span class="o">=</span> <span class="n">qw</span><span class="o">.</span><span class="n">Qweight</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">kspace</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">projector</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">ProjectionPropagator</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">voxelsize</span><span class="p">,</span> <span class="n">kspaceDim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">newKspace</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wavelength</span> <span class="o">=</span> <span class="n">wavelength</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voxelsize</span> <span class="o">=</span> <span class="n">voxelsize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimalRotationAngleDeg</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hasOptimizedRotation</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="o">=</span> <span class="n">comm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ga</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="n">debug</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span> <span class="p">)</span>
+
+
+<div class="viewcode-block" id="DensityCorrector.plotRec"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.plotRec">[docs]</a>    <span class="k">def</span> <span class="nf">plotRec</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;inferno&quot;</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plots cuts in the reconstructed object through the center</span>
+
+<span class="sd">        show: bool</span>
+<span class="sd">            If True pyplot.show() is called at the end</span>
+
+<span class="sd">        cmap: str</span>
+<span class="sd">            Colormap used. Default is inferno</span>
+
+<span class="sd">        Returns: fig, [ax1,ax2,ax3]</span>
+<span class="sd">            fig - Matplotlib figure object\n</span>
+<span class="sd">            [ax1,ax2,ax3] - list of the Matplotlib axes object created</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="p">)</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">centerX</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">centerY</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">centerZ</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="p">[:,:,</span><span class="n">centerZ</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span> <span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;xy-plane&quot;</span><span class="p">)</span>
+
+        <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="p">[:,</span><span class="n">centerY</span><span class="p">,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span> <span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;xz-plane&quot;</span><span class="p">)</span>
+
+        <span class="n">ax3</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">ax3</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="p">[</span><span class="n">centerX</span><span class="p">,:,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span> <span class="p">)</span>
+        <span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;yz-plane&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="p">[</span><span class="n">ax1</span><span class="p">,</span><span class="n">ax2</span><span class="p">,</span><span class="n">ax3</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DensityCorrector.plotKspace"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.plotKspace">[docs]</a>    <span class="k">def</span> <span class="nf">plotKspace</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;inferno&quot;</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plots cuts in the kspace scattering pattern of the object</span>
+
+<span class="sd">        data: ndarray</span>
+<span class="sd">            3D array of the scattering data</span>
+
+<span class="sd">        cmape: str</span>
+<span class="sd">            Colormap. Default inferno</span>
+
+<span class="sd">        Returns:         fig, [ax1,ax2,ax3]</span>
+<span class="sd">        fig - Figure object\n</span>
+<span class="sd">        [ax1,ax2,ax3] - list of the three ax objects describing the subplots</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="p">)</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">centerX</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">centerY</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">centerZ</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">data</span><span class="p">[:,:,</span><span class="n">centerZ</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LogNorm</span><span class="p">()</span> <span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;$k_xk_y$-plane&quot;</span><span class="p">)</span>
+
+        <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">data</span><span class="p">[:,</span><span class="n">centerY</span><span class="p">,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LogNorm</span><span class="p">()</span> <span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;$k_xk_z$-plane&quot;</span><span class="p">)</span>
+
+        <span class="n">ax3</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">ax3</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">data</span><span class="p">[</span><span class="n">centerX</span><span class="p">,:,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LogNorm</span><span class="p">()</span> <span class="p">)</span>
+        <span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;$k_yk_z$-plane&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="p">[</span><span class="n">ax1</span><span class="p">,</span><span class="n">ax2</span><span class="p">,</span><span class="n">ax3</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DensityCorrector.segment"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.segment">[docs]</a>    <span class="k">def</span> <span class="nf">segment</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">Nclusters</span><span class="p">,</span> <span class="n">maxIter</span><span class="o">=</span><span class="mi">1000</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Segments the image into N clusters</span>
+
+<span class="sd">        Nclusters - number of clusters to use</span>
+
+<span class="sd">        maxIter - Maximum number of iterations. Default is 1000</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">kmeans</span><span class="p">(</span> <span class="n">Nclusters</span><span class="p">,</span> <span class="n">maxIter</span><span class="o">=</span><span class="n">maxIter</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DensityCorrector.removeInternalPointsFromSurroundingCluster"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.removeInternalPointsFromSurroundingCluster">[docs]</a>    <span class="k">def</span> <span class="nf">removeInternalPointsFromSurroundingCluster</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a separate cluster of voxels inside the support that</span>
+<span class="sd">        was segmented into the same clusters as the surrounding region not</span>
+<span class="sd">        belonging to the support</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">internal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="n">internal</span><span class="p">[</span> <span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="o">&gt;</span><span class="mf">1E-6</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">reconstructed</span><span class="o">.</span><span class="n">max</span><span class="p">()]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">newcluster</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">clusters</span><span class="o">==</span><span class="mi">0</span><span class="p">,</span> <span class="n">internal</span><span class="o">==</span><span class="mi">1</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">clusters</span><span class="p">[</span><span class="n">newcluster</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DensityCorrector.plotClusters"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.plotClusters">[docs]</a>    <span class="k">def</span> <span class="nf">plotClusters</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">cluster</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plots individual clusters given by the cluster array</span>
+
+<span class="sd">        clusters. int</span>
+<span class="sd">            ID of the cluster to plot</span>
+
+<span class="sd">        cmap: str</span>
+<span class="sd">            Colormap. Default is bone</span>
+
+<span class="sd">        Returns: fig, ax</span>
+<span class="sd">            fig - Matplotlib figure object\n</span>
+<span class="sd">            ax - Matplotlib ax object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">getSingleCluster</span><span class="p">(</span> <span class="n">cluster</span> <span class="p">)</span>
+        <span class="n">centerX</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">centerY</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">centerZ</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">data</span><span class="p">[:,:,</span><span class="n">centerZ</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span><span class="n">centerY</span><span class="p">,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">centerX</span><span class="p">,:,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Cluser </span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">cluster</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span></div>
+
+<div class="viewcode-block" id="DensityCorrector.computeMask"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.computeMask">[docs]</a>    <span class="k">def</span> <span class="nf">computeMask</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes a mask where all the points that are not measured in the</span>
+<span class="sd">        experimental dataset is set to 0 and all points that are included</span>
+<span class="sd">        are set to 1</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span> <span class="o">&gt;</span> <span class="mf">10.0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">min</span><span class="p">()]</span> <span class="o">=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="DensityCorrector.plotMask"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.plotMask">[docs]</a>    <span class="k">def</span> <span class="nf">plotMask</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plots the mask</span>
+
+<span class="sd">        fig: Matplotlib figure object</span>
+<span class="sd">            If given the mask is plotted on an existing figure. Otherwise a new figure instance is created</span>
+
+<span class="sd">        Returns: fig</span>
+<span class="sd">            The Matplotlib figure object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span> <span class="p">)</span>
+        <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">[</span><span class="n">center</span><span class="p">,:,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span> <span class="p">)</span>
+        <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">[:,</span><span class="n">center</span><span class="p">,:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span> <span class="p">)</span>
+        <span class="n">ax3</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">ax3</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">[:,:,</span><span class="n">center</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="DensityCorrector.getMeanSqError"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.getMeanSqError">[docs]</a>    <span class="k">def</span> <span class="nf">getMeanSqError</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">angle</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the mean square error between the simulated and the measured dataset</span>
+<span class="sd">        This function is only used to se if the simulated pattern is rotated with respect to the measured.</span>
+<span class="sd">        It is not used in the fitting procedure and thus a very accurate mean square error is not needed</span>
+<span class="sd">        Hence, all the arrays are downsampled by a factor 4 to speed up the determination of the</span>
+<span class="sd">        overall rotation angle</span>
+
+<span class="sd">        angle: float</span>
+<span class="sd">            Rotates the K-space by angle. The angles is given in degress</span>
+
+<span class="sd">        Returns: float</span>
+<span class="sd">            The mean square error between the original K-space and the rotated</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">rotated</span> <span class="o">=</span> <span class="n">sciinterp</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">newKspace</span><span class="p">[::</span><span class="n">ds</span><span class="p">,::</span><span class="n">ds</span><span class="p">,::</span><span class="n">ds</span><span class="p">],</span> <span class="n">angle</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">reshape</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span> <span class="p">(</span><span class="n">rotated</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="p">[::</span><span class="n">ds</span><span class="p">,::</span><span class="n">ds</span><span class="p">,::</span><span class="n">ds</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DensityCorrector.optimizeRotation"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.optimizeRotation">[docs]</a>    <span class="k">def</span> <span class="nf">optimizeRotation</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">nangles</span><span class="o">=</span><span class="mi">24</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the rotation angle between the measured and the simulated scattering pattern</span>
+
+<span class="sd">        nangles: int</span>
+<span class="sd">            Number of angles used when determining the optimal rotation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">180</span><span class="p">,</span><span class="n">nangles</span><span class="p">)</span>
+        <span class="n">meanSquareError</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">anglesPerProc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+            <span class="n">rank</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">anglesPerProc</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span> <span class="p">)</span>
+            <span class="n">rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
+        <span class="n">upper</span> <span class="o">=</span> <span class="n">anglesPerProc</span><span class="o">*</span><span class="n">rank</span><span class="o">+</span><span class="n">anglesPerProc</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">upper</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="p">):</span>
+            <span class="n">upper</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">anglesPerProc</span><span class="o">*</span><span class="n">rank</span><span class="p">,</span> <span class="n">upper</span><span class="p">):</span>
+            <span class="n">meanSquareError</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getMeanSqError</span><span class="p">(</span><span class="n">angle</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">dest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">meanSquareError</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Reduce</span><span class="p">(</span> <span class="n">meanSquareError</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">SUM</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+                <span class="n">meanSquareError</span> <span class="o">=</span> <span class="n">dest</span>
+        <span class="n">meanSquareError</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">meanSquareError</span><span class="p">)</span>
+        <span class="n">meanSquareError</span> <span class="o">/=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span><span class="n">meanSquareError</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Angle (deg)&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Mean square error&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimalRotationAngleDeg</span> <span class="o">=</span> <span class="n">angle</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">meanSquareError</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span></div>
+
+
+<div class="viewcode-block" id="DensityCorrector.buildKspace"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.buildKspace">[docs]</a>    <span class="k">def</span> <span class="nf">buildKspace</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">angleStepDeg</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute 3D scattering pattern using the projection approximation</span>
+
+<span class="sd">        angleStepDeg: float</span>
+<span class="sd">            Number of degrees to rotate the object with on each step.</span>
+<span class="sd">            The higher step the faster the 3D kspace is built, but the accuracy becomes poor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">qweight</span><span class="o">.</span><span class="n">weightsAreComputed</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qweight</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span> <span class="n">showPlot</span><span class="o">=</span><span class="kc">True</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">qweight</span><span class="o">.</span><span class="n">weightData</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">kspace</span> <span class="p">)</span>
+
+        <span class="c1">#print (self.kspace)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">newKspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">projector</span><span class="o">.</span><span class="n">generateKspace</span><span class="p">(</span> <span class="n">angleStepDeg</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qweight</span><span class="o">.</span><span class="n">weightData</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">newKspace</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">newKspace</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kspaceIntegral</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">newKspace</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">hasOptimizedRotation</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">optimizeRotation</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hasOptimizedRotation</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">computeMask</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">newKspace</span> <span class="o">=</span> <span class="n">sciinterp</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">newKspace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimalRotationAngleDeg</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">reshape</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">newKspace</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">==</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span></div>
+
+<div class="viewcode-block" id="DensityCorrector.costFunction"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.costFunction">[docs]</a>    <span class="k">def</span> <span class="nf">costFunction</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the mean square error between the simulated and the measured scattering mattern</span>
+<span class="sd">        All points that are not included in the experimental dataset are masked out</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">normalization</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">newKspace</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">==</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">newKspace</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">==</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">==</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="p">)</span> <span class="p">)</span><span class="o">/</span><span class="n">normalization</span></div>
+
+<div class="viewcode-block" id="DensityCorrector.fit"><a class="viewcode-back" href="../densityCorrector.html#densityCorrector.DensityCorrector.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">nClusters</span><span class="p">,</span> <span class="n">angleStepKspace</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">maxDelta</span><span class="o">=</span><span class="mf">1E-4</span><span class="p">,</span> <span class="n">nGAgenerations</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">printStatusMessage</span><span class="o">=</span><span class="kc">True</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit the simulated scattering pattern to the experimental by using the Genetic Algorithm</span>
+
+<span class="sd">        nClusters: int</span>
+<span class="sd">            Number of clusters to use in the segmentation</span>
+
+<span class="sd">        angleStepKspace: float</span>
+<span class="sd">            Rotation step to use when the 3D kspace is built. Default: 10 degree</span>
+
+<span class="sd">        maxDelta: float</span>
+<span class="sd">            Maximum value of the deviation from unity of the real part of the refractive index</span>
+
+<span class="sd">        nGAgenerations: int</span>
+<span class="sd">            Number of generations in the Genetic Algorithm. Default is 50</span>
+
+<span class="sd">        printStatusMessage: bool</span>
+<span class="sd">            If True status messages after each generation is printed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span> <span class="n">nClusters</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ga</span> <span class="o">=</span> <span class="n">ga</span><span class="o">.</span><span class="n">GeneticAlgorithm</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">maxDelta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="n">nGAgenerations</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ga</span><span class="o">.</span><span class="n">printStatusMessage</span> <span class="o">=</span> <span class="n">printStatusMessage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ga</span><span class="o">.</span><span class="n">run</span><span class="p">(</span> <span class="n">angleStepKspace</span> <span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, David Kleiven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

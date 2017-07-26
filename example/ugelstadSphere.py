@@ -6,9 +6,10 @@ import densityCorrector as dc
 from matplotlib import pyplot as plt
 from mpi4py import MPI
 
+reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
+kspace = "data/NiAu_sample1_3D.npy"
+
 def main( argv ):
-    reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
-    kspace = "data/NiAu_sample1_3D.npy"
 
     if ( len(argv) != 1 ):
         print ("Usage: python ugelStadSphere.py [--exploreData,--fit,--testFit]")

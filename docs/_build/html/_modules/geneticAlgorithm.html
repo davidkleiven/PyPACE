@@ -1,0 +1,481 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>geneticAlgorithm &mdash; PyPACE 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="PyPACE 1.0 documentation" href="../index.html"/>
+        <link rel="up" title="Module code" href="index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> PyPACE
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyPACE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>geneticAlgorithm</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for geneticAlgorithm</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">densityCorrector</span> <span class="k">as</span> <span class="nn">dc</span>
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="k">import</span> <span class="n">MPI</span>
+<span class="kn">import</span> <span class="nn">pickle</span> <span class="k">as</span> <span class="nn">pck</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">config</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">enableShow</span> <span class="p">):</span>
+    <span class="n">mpl</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;Agg&quot;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+
+<div class="viewcode-block" id="GACouldNotFindParentsError"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GACouldNotFindParentsError">[docs]</a><span class="k">class</span> <span class="nc">GACouldNotFindParentsError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm">[docs]</a><span class="k">class</span> <span class="nc">GeneticAlgorithm</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">densCorr</span><span class="p">,</span> <span class="n">maxValue</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">nGenerations</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">saveInterval</span><span class="o">=</span><span class="mi">1</span> <span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">densCorr</span><span class="p">,</span><span class="n">dc</span><span class="o">.</span><span class="n">DensityCorrector</span><span class="p">)</span> <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Genetic Algorithm requires a DensityCorrector object&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dc</span> <span class="o">=</span> <span class="n">densCorr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxValue</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span> <span class="o">=</span> <span class="mi">10</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dc</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">)</span>
+        <span class="c1"># Round this number to be an integer number of the number of processes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span><span class="o">/</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">*</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nGenes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dc</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="c1"># -1: The cluster corresponding to the outer is forced to be zero</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">population</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nGenes</span><span class="p">)</span><span class="o">*</span><span class="n">maxValue</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numberOfGenesToMutate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nGenes</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span><span class="o">*</span><span class="mf">0.01</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nGenerations</span> <span class="o">=</span> <span class="n">nGenerations</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">numberOfGenesToMutate</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numberOfGenesToMutate</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="o">=</span> <span class="n">comm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bestIndividuals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">nGenerations</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nGenes</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">currentGeneration</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="n">debug</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">printStatusMessage</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">saveInterval</span> <span class="o">=</span> <span class="n">saveInterval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parentHistogram</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diversity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nGenerations</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GeneticAlgorithm.computeFitness"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.computeFitness">[docs]</a>    <span class="k">def</span> <span class="nf">computeFitness</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">angleStepDeg</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the fitness factor for all the populations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Barrier</span><span class="p">()</span> <span class="c1"># All process wait until all reach this point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">population</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">))</span>
+        <span class="n">nPopPerProc</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span><span class="o">*</span><span class="n">nPopPerProc</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span><span class="o">*</span><span class="n">nPopPerProc</span><span class="o">+</span><span class="n">nPopPerProc</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span><span class="n">end</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="p">):</span>
+                <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Rank </span><span class="si">%d</span><span class="s2">: Computing fitness factor for individual </span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">(),</span><span class="n">i</span><span class="p">))</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">printStatusMessage</span> <span class="p">):</span>
+                <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Generation </span><span class="si">%d</span><span class="s2">, </span><span class="si">%.1f</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">currentGeneration</span><span class="p">,</span><span class="n">i</span><span class="o">*</span><span class="mi">100</span><span class="o">/</span><span class="n">end</span><span class="p">))</span>
+            <span class="c1"># Insert the means in to the clusters</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dc</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># Force the region surrounding the scatterer to have delta = 0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dc</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dc</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">replaceDataWithMeans</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dc</span><span class="o">.</span><span class="n">buildKspace</span><span class="p">(</span> <span class="n">angleStepDeg</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">dc</span><span class="o">.</span><span class="n">costFunction</span><span class="p">()</span> <span class="c1"># Use the negative of the cross cost function --&gt; value with smallest cost gets the largest fitness</span>
+
+        <span class="c1"># Collect the fitness from the other processes</span>
+        <span class="n">dest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Reduce</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">SUM</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">dest</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm.getParents"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.getParents">[docs]</a>    <span class="k">def</span> <span class="nf">getParents</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Select parents using roulette search</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+        <span class="n">cumsum</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">randnum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span><span class="o">*</span><span class="n">S</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">)):</span>
+            <span class="n">cumsum</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">cumsum</span> <span class="o">&gt;=</span> <span class="n">randnum</span> <span class="p">):</span>
+                <span class="n">parent1</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="n">oldFitnessParam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">[</span><span class="n">parent1</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">[</span><span class="n">parent1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                <span class="k">break</span>
+
+        <span class="n">cumsum</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="p">)</span>
+        <span class="n">randnum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span><span class="o">*</span><span class="n">S</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">)):</span>
+            <span class="n">cumsum</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">cumsum</span> <span class="o">&gt;=</span> <span class="n">randnum</span> <span class="p">):</span>
+                <span class="n">parent2</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">[</span><span class="n">parent1</span><span class="p">]</span> <span class="o">=</span> <span class="n">oldFitnessParam</span>
+                <span class="k">return</span> <span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Did not manage to find parents!&quot;</span><span class="p">)</span></div>
+        <span class="c1">#raise GACouldNotFindParentsError(&quot;An unexpected error occured: Could not find parents!&quot;)</span>
+
+<div class="viewcode-block" id="GeneticAlgorithm.rankSelection"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.rankSelection">[docs]</a>    <span class="k">def</span> <span class="nf">rankSelection</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Select parents with rank selection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+        <span class="n">maxval</span> <span class="o">=</span> <span class="n">N</span><span class="o">*</span><span class="p">(</span><span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+        <span class="n">randnum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span><span class="o">*</span><span class="p">(</span><span class="n">maxval</span><span class="p">)</span>
+        <span class="n">cumsum</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">rank</span><span class="p">)):</span>
+            <span class="c1">#cumsum += (len(rank)-i)</span>
+            <span class="n">cumsum</span> <span class="o">+=</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">cumsum</span> <span class="o">&gt;=</span> <span class="n">randnum</span> <span class="p">):</span>
+                <span class="n">parent1</span> <span class="o">=</span> <span class="n">rank</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">break</span>
+
+        <span class="c1">#maxval -= rank[parent1]</span>
+        <span class="n">parent2</span> <span class="o">=</span> <span class="n">parent1</span>
+        <span class="k">while</span> <span class="p">(</span> <span class="n">parent2</span> <span class="o">==</span> <span class="n">parent1</span> <span class="p">):</span>
+            <span class="n">randnum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span><span class="o">*</span><span class="n">maxval</span>
+            <span class="n">cumsum</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">rank</span><span class="p">)):</span>
+                <span class="c1">#cumsum += (len(rank)-i)</span>
+                <span class="n">cumsum</span> <span class="o">+=</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">cumsum</span> <span class="o">&gt;=</span> <span class="n">randnum</span> <span class="p">):</span>
+                    <span class="n">parent2</span> <span class="o">=</span> <span class="n">rank</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="k">break</span>
+        <span class="k">return</span> <span class="n">parent1</span><span class="p">,</span><span class="n">parent2</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm.reproduce"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.reproduce">[docs]</a>    <span class="k">def</span> <span class="nf">reproduce</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new generation by single point cross over from two parents</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">copyPop</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+        <span class="c1"># First find the two best solutions and pass them to the next generation</span>
+        <span class="n">Npass</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">oldBestFitness</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Npass</span><span class="p">)</span>
+        <span class="n">bestIndx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Npass</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="c1"># Extract the best individuals</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">Npass</span><span class="p">):</span>
+            <span class="n">best</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+            <span class="n">bestIndx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">best</span>
+            <span class="n">oldBestFitness</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">[</span><span class="n">best</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">[</span><span class="n">best</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">copyPop</span><span class="p">[</span><span class="n">best</span><span class="p">,:]</span>
+
+        <span class="c1"># Insert the fitness back into the fitness array</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">Npass</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">[</span><span class="n">bestIndx</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">oldBestFitness</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="c1">#self.pointCrossOver( Npass, copyPop )</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uniformCrossOver</span><span class="p">(</span> <span class="n">Npass</span><span class="p">,</span> <span class="n">copyPop</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm.mutate"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.mutate">[docs]</a>    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Mutate some genes by assigning a random value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">genesToMutate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">nGenes</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numberOfGenesToMutate</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="n">genesToMutate</span><span class="p">:</span>
+            <span class="n">individual</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">num</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span> <span class="p">)</span>
+            <span class="n">gene</span> <span class="o">=</span> <span class="n">num</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">nGenes</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">individual</span><span class="p">,</span><span class="n">gene</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">maxValue</span></div>
+
+    <span class="c1">#def mutate( self ):</span>
+    <span class="c1">#    &quot;&quot;&quot;</span>
+    <span class="c1">#    Mutate some genes by assigning a random value, but ensure that the best solution is not altered</span>
+    <span class="c1">#    &quot;&quot;&quot;</span>
+    <span class="c1">#    Ngenes = 5</span>
+    <span class="c1">#    mutants = np.random.randint(low=0,high=self.nPopulations, size=Ngenes)</span>
+    <span class="c1">#    best = np.argmax(self.fitness)</span>
+    <span class="c1">#    for ind in mutants:</span>
+    <span class="c1">#        if ( ind == best ):</span>
+    <span class="c1">#            continue</span>
+    <span class="c1">#        self.population[ind,:] += np.random.normal(0.0,0.2*self.maxValue,size=self.nGenes)</span>
+
+
+<div class="viewcode-block" id="GeneticAlgorithm.getBestIndividual"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.getBestIndividual">[docs]</a>    <span class="k">def</span> <span class="nf">getBestIndividual</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the individual with the best fitness factor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">indx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">indx</span><span class="p">,:]</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm.evolveOneGeneration"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.evolveOneGeneration">[docs]</a>    <span class="k">def</span> <span class="nf">evolveOneGeneration</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">angleStepKspace</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evolves the GA by one generation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">computeFitness</span><span class="p">(</span> <span class="n">angleStepKspace</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+            <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Best fitness: </span><span class="si">%.2E</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">)))</span>
+            <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Worst fitness: </span><span class="si">%.2E</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bestIndividuals</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">currentGeneration</span><span class="p">,:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getBestIndividual</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">updateDiversity</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reproduce</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">currentGeneration</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentGeneration</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">saveInterval</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;bestIndividuals.csv&quot;</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span> <span class="n">fname</span> <span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bestIndividuals</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">currentGeneration</span><span class="p">,:],</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span> <span class="p">)</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span> <span class="s2">&quot;data/lastGeneration</span><span class="si">%d</span><span class="s2">.csv&quot;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">currentGeneration</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span> <span class="p">)</span>
+                <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Best individual in each generation written to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm.pointCrossOver"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.pointCrossOver">[docs]</a>    <span class="k">def</span> <span class="nf">pointCrossOver</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">copyPop</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create child by a single point cross over</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create the rest of the generation based on parents</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span><span class="p">):</span>
+            <span class="c1">#parent1,parent2 = self.getParents()</span>
+            <span class="n">parent1</span><span class="p">,</span><span class="n">parent2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rankSelection</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parentHistogram</span><span class="p">[</span><span class="n">parent1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parentHistogram</span><span class="p">[</span><span class="n">parent2</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">crossPoint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nGenes</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">,:</span><span class="n">crossPoint</span><span class="p">]</span> <span class="o">=</span> <span class="n">copyPop</span><span class="p">[</span><span class="n">parent1</span><span class="p">,:</span><span class="n">crossPoint</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">crossPoint</span><span class="p">:]</span> <span class="o">=</span> <span class="n">copyPop</span><span class="p">[</span><span class="n">parent2</span><span class="p">,</span><span class="n">crossPoint</span><span class="p">:]</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm.uniformCrossOver"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.uniformCrossOver">[docs]</a>    <span class="k">def</span> <span class="nf">uniformCrossOver</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">copyPop</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create child with uniform cross over</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nPopulations</span> <span class="p">):</span>
+            <span class="n">parent1</span><span class="p">,</span><span class="n">parent2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rankSelection</span><span class="p">()</span>
+            <span class="c1">#print (&quot;Parent fitness: &quot;, self.fitness[parent1],self.fitness[parent2])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parentHistogram</span><span class="p">[</span><span class="n">parent1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parentHistogram</span><span class="p">[</span><span class="n">parent2</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nGenes</span><span class="p">):</span>
+                <span class="n">parent</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mf">0.5</span> <span class="p">):</span>
+                    <span class="n">parent</span> <span class="o">=</span> <span class="n">parent1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">parent</span> <span class="o">=</span> <span class="n">parent2</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">copyPop</span><span class="p">[</span><span class="n">parent</span><span class="p">,</span><span class="n">j</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm.run"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">angleStepKspace</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs GA for a given number of generations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+            <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Starting the Genetic Algorithm...&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nGenerations</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evolveOneGeneration</span><span class="p">(</span> <span class="n">angleStepKspace</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm.updateDiversity"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.updateDiversity">[docs]</a>    <span class="k">def</span> <span class="nf">updateDiversity</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diversity</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">currentGeneration</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getDiversity</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm.getDiversity"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.getDiversity">[docs]</a>    <span class="k">def</span> <span class="nf">getDiversity</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the average standard deviation in the entire population</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">div</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nGenes</span> <span class="p">):</span>
+            <span class="n">div</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">[:,</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">div</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nGenes</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">maxValue</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm.plotParentHistogram"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.plotParentHistogram">[docs]</a>    <span class="k">def</span> <span class="nf">plotParentHistogram</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plots the histogram over parents</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">parentHistogram</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parentHistogram</span><span class="p">),</span> <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;steps&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GeneticAlgorithm.plotDiversity"><a class="viewcode-back" href="../geneticAlgorithm.html#geneticAlgorithm.GeneticAlgorithm.plotDiversity">[docs]</a>    <span class="k">def</span> <span class="nf">plotDiversity</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">diversity</span> <span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, David Kleiven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
