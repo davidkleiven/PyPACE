@@ -111,4 +111,4 @@ tmpOptFiles/*
 pypace/pypaceCythonMP.c
 *.npy
 *.db
-*.rst.txt
+#*.rst.txt

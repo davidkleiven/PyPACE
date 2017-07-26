@@ -18,7 +18,7 @@ Welcome to PyPACE's documentation!
    missingDatainitGenerator
    projectionApprox
    qWeighting
-   removeUncoveredRegion.html
+   removeUncoveredRegion
 
 
 

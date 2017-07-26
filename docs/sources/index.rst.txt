@@ -8,7 +8,17 @@ Welcome to PyPACE's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+
+   segmentor
+   azmDensityCorrector
+   densityCorrector
+   eDensityVisualizer
+   geneticAlgorithm
+   missingData
+   missingDatainitGenerator
+   projectionApprox
+   qWeighting
+   removeUncoveredRegion
 
 
 
