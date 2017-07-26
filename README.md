@@ -10,3 +10,5 @@ Then run
 ```bash
 python -m unittest discover tests
 ```
+
+The API documentation is available at https://davidkleiven.github.io/PyPACE/.
