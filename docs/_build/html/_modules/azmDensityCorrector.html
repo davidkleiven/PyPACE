@@ -1,0 +1,553 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>azmDensityCorrector &mdash; PyPACE 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="PyPACE 1.0 documentation" href="../index.html"/>
+        <link rel="up" title="Module code" href="index.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> PyPACE
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyPACE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>azmDensityCorrector</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for azmDensityCorrector</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">densityCorrector</span> <span class="k">as</span> <span class="nn">dc</span>
+<span class="kn">import</span> <span class="nn">pypaceCython</span> <span class="k">as</span> <span class="nn">pcmp</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">config</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="k">if</span> <span class="p">(</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">enableShow</span> <span class="p">):</span>
+    <span class="n">mpl</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;Agg&quot;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">optimize</span> <span class="k">as</span> <span class="n">opt</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">ndimage</span> <span class="k">as</span> <span class="n">ndimg</span>
+<span class="kn">import</span> <span class="nn">subprocess</span> <span class="k">as</span> <span class="nn">sub</span>
+<span class="kn">import</span> <span class="nn">h5py</span> <span class="k">as</span> <span class="nn">h5</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pyswarm</span> <span class="k">as</span> <span class="nn">pso</span>
+    <span class="n">hasPSO</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="n">hasPSO</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="SliceDensityCorrector"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.SliceDensityCorrector">[docs]</a><span class="k">class</span> <span class="nc">SliceDensityCorrector</span><span class="p">(</span> <span class="n">dc</span><span class="o">.</span><span class="n">DensityCorrector</span> <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reconstructedFname</span><span class="p">,</span> <span class="n">kspaceFname</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">voxelsize</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">projectionAxis</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">segmentation</span><span class="o">=</span><span class="s2">&quot;voxels&quot;</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        SliceDensityCorrector. Correcting the density obtained from the phase retrieval algorithm</span>
+<span class="sd">        by using only one slice in Fourier space.</span>
+
+<span class="sd">        See the documentation for :class:&#39;DensityCorrector&#39; for explination of the first arguments</span>
+
+<span class="sd">        projectionAxis: int</span>
+<span class="sd">            Axis along which the projection of the object should be computed. Has to 0,1 or 2. Default is 2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dc</span><span class="o">.</span><span class="n">DensityCorrector</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reconstructedFname</span><span class="p">,</span> <span class="n">kspaceFname</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">voxelsize</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">segmentation</span><span class="o">=</span><span class="n">segmentation</span> <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">computeMask</span><span class="p">()</span>
+
+        <span class="c1"># Compute the q-weighting of the data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qweight</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span> <span class="n">showPlot</span><span class="o">=</span><span class="kc">True</span> <span class="p">)</span>
+
+        <span class="c1"># Divide the measured data by the weighting factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qweight</span><span class="o">.</span><span class="n">weightData</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">kspace</span> <span class="p">)</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">projAxis</span> <span class="o">=</span> <span class="n">projectionAxis</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">projAxis</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">),:,:]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">projMask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">),:,:]</span>
+        <span class="k">elif</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">projAxis</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="p">[:,</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">),:]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">projMask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">[:,</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">),:]</span>
+        <span class="k">elif</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">projAxis</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="p">[:,:,</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">projMask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">[:,:,</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kspace</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Projection axis has to be either 0,1 or 2&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">blurSigma</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="c1">#self.sliceKspace = ndimg.gaussian_filter( self.sliceKspace, self.blurSigma )</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kspaceSum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bestFF</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bestResidual</span> <span class="o">=</span> <span class="mf">1E30</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizationMode</span> <span class="o">=</span> <span class="s2">&quot;local&quot;</span>
+
+<div class="viewcode-block" id="SliceDensityCorrector.plotSliceKspace"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.SliceDensityCorrector.plotSliceKspace">[docs]</a>    <span class="k">def</span> <span class="nf">plotSliceKspace</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plots the slice of the measured data</span>
+
+<span class="sd">        fig: Matplit figure</span>
+<span class="sd">            If given the plot will be added to the existing figure. Otherwise a new figure is created</span>
+
+<span class="sd">        Returns: Matplotlib figure</span>
+<span class="sd">            Instance of the figure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;nipy_spectral&quot;</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="SliceDensityCorrector.needPadding"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.SliceDensityCorrector.needPadding">[docs]</a>    <span class="k">def</span> <span class="nf">needPadding</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns: bool</span>
+<span class="sd">            True if the real space object is half the size in each dimension of the</span>
+<span class="sd">            Fourier domain. Hence, it needs to be padded.</span>
+<span class="sd">            False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">shp1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">shp2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">projectedClusters</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">pad</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="n">shp2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">shp2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The projected clusters need to be square&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="n">shp2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">shp1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="p">(</span> <span class="n">shp2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">shp1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The realspace object has to either be half the size of the k-space object or of similar shape as the k-space object&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SliceDensityCorrector.buildKspace"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.SliceDensityCorrector.buildKspace">[docs]</a>    <span class="k">def</span> <span class="nf">buildKspace</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the scattering pattern using the projection approximation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">needPadding</span><span class="p">()</span> <span class="p">):</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">ks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">4</span> <span class="p">)</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="mi">3</span><span class="o">*</span><span class="n">ks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">4</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">ks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">)</span> <span class="p">):</span>
+            <span class="c1">#print (self.segmentor.projectedClusters[i].density)</span>
+            <span class="n">ks</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">,</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">projectedClusters</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">density</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="n">wavenumber</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">wavelength</span>
+        <span class="n">ks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">ks</span><span class="o">*</span><span class="n">wavenumber</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">voxelsize</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+        <span class="n">ff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft2</span><span class="p">(</span> <span class="n">ks</span> <span class="p">)</span> <span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">ff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span>
+        <span class="n">ff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qweight</span><span class="o">.</span><span class="n">weightData</span><span class="p">(</span> <span class="n">ff</span> <span class="p">)</span>
+        <span class="n">ff</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kspaceSum</span><span class="o">/</span><span class="n">ff</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">ff</span></div>
+
+<div class="viewcode-block" id="SliceDensityCorrector.residual"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.SliceDensityCorrector.residual">[docs]</a>    <span class="k">def</span> <span class="nf">residual</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">x</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the sum of difference squared between the measured and the simulated data</span>
+
+<span class="sd">        x: 1D-array</span>
+<span class="sd">            Array with the means of the clusters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">ff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buildKspace</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">pcmp</span><span class="o">.</span><span class="n">maskedSumOfSquares</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span><span class="p">,</span> <span class="n">ff</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">projMask</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SliceDensityCorrector.fitSingle"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.SliceDensityCorrector.fitSingle">[docs]</a>    <span class="k">def</span> <span class="nf">fitSingle</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">maxDelta</span><span class="o">=</span><span class="mf">1E-4</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform local optimization from a random initial condisiont</span>
+
+<span class="sd">        maxDelta: float</span>
+<span class="sd">            Maximum value of the deviation from unity of the real part of the refractive index</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="p">)</span><span class="o">*</span><span class="n">maxDelta</span>
+        <span class="c1">#x0 = self.segmentor.means*maxDelta/np.max(self.segmentor.means)</span>
+        <span class="c1">#x0 = x0[1:]</span>
+        <span class="n">optimum</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">least_squares</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="n">maxDelta</span><span class="p">)</span> <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="n">optimum</span><span class="p">[</span><span class="s2">&quot;cost&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">bestResidual</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bestFF</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buildKspace</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">optimum</span></div>
+
+<div class="viewcode-block" id="SliceDensityCorrector.fitPSO"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.SliceDensityCorrector.fitPSO">[docs]</a>    <span class="k">def</span> <span class="nf">fitPSO</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">nClusters</span><span class="p">,</span> <span class="n">nIter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">maxDelta</span><span class="o">=</span><span class="mf">1E-4</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform the curve fit using Particle Swarm Optimization from the pyswarm module</span>
+
+<span class="sd">        nClusers: int</span>
+<span class="sd">            Number of clusters</span>
+
+<span class="sd">        nIter: int</span>
+<span class="sd">            Maximum number of iterations. Default is 1000</span>
+
+<span class="sd">        maxDelta: float</span>
+<span class="sd">            Maximum value of the deviation from unity of the real part of the refractive index</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">hasPSO</span> <span class="p">):</span>
+            <span class="n">lb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="p">)</span>
+            <span class="n">ub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="p">)</span><span class="o">+</span><span class="n">maxDelta</span>
+            <span class="n">xopt</span><span class="p">,</span> <span class="n">fopt</span> <span class="o">=</span> <span class="n">pso</span><span class="o">.</span><span class="n">pso</span><span class="p">(</span> <span class="n">residualNotInstanceMethod</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="p">,),</span> <span class="n">maxiter</span><span class="o">=</span><span class="n">nIter</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">True</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;The module pyswarm was not found&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">xopt</span>
+
+        <span class="c1"># Create a dictionary similar to the ones return by scipys optimization functions</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;cost&quot;</span><span class="p">:</span><span class="n">fopt</span><span class="p">,</span>
+        <span class="s2">&quot;success&quot;</span><span class="p">:</span><span class="kc">True</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="SliceDensityCorrector.fit"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.SliceDensityCorrector.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">nIter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">nClusters</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">maxDelta</span><span class="o">=</span><span class="mf">1E-4</span><span class="p">,</span> <span class="n">useSeparateClusterAtCenter</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">centerClusterWidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;local&quot;</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit the e-density parameters to the scattering pattern</span>
+
+<span class="sd">        nIter: int</span>
+<span class="sd">            Maximum number of iterations</span>
+
+<span class="sd">        nClusters: int</span>
+<span class="sd">            Number of clusters</span>
+
+<span class="sd">        maxDelta: float</span>
+<span class="sd">            Maximum value of the deviation from unity of the real part of the refractive index</span>
+
+<span class="sd">        useSeparateClusterAtCenter: bool</span>
+<span class="sd">            If True a cubic cluster at the center of the scatterer is introduced</span>
+
+<span class="sd">        centerClusterWidth: int</span>
+<span class="sd">            Width of the cube introduced at then center in voxels.</span>
+<span class="sd">            If useSeparateClusterAtCenter is False this argument is ignored</span>
+
+<span class="sd">        mode: str</span>
+<span class="sd">            Optimization mode. Has to be either. local or pso.\n</span>
+<span class="sd">            local - run multiple local optimizations and pick the best result\n</span>
+<span class="sd">            pso - Use Particle Swarm Optimization scheme</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;local&quot;</span> <span class="ow">and</span> <span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;pso&quot;</span> <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;mode has to be either local or pso&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizationMode</span> <span class="o">=</span> <span class="n">mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span> <span class="n">nClusters</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">useSeparateClusterAtCenter</span> <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">createSeparateClusterCenter</span><span class="p">(</span> <span class="n">centerClusterWidth</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removeInternalPointsFromSurroundingCluster</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">projectClusters</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Fitting requires MPI support&quot;</span><span class="p">)</span>
+
+        <span class="n">rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
+        <span class="n">nPerProcess</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">nIter</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">nPerProcess</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">mode</span> <span class="o">==</span><span class="s2">&quot;pso&quot;</span> <span class="p">):</span>
+            <span class="n">nPerProcess</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">folder</span> <span class="o">=</span> <span class="s2">&quot;tmpOptFiles&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">call</span><span class="p">([</span><span class="s2">&quot;mkdir&quot;</span><span class="p">,</span><span class="s2">&quot;-p&quot;</span><span class="p">,</span><span class="s2">&quot;tmpOptFiles&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Barrier</span><span class="p">()</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">folder</span><span class="o">+</span><span class="s2">&quot;/optimizationResults</span><span class="si">%d</span><span class="s2">.h5&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+        <span class="n">h5file</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">File</span><span class="p">(</span> <span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nPerProcess</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="p">):</span>
+                <span class="n">optimum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitSingle</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="p">(</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;pso&quot;</span> <span class="p">):</span>
+                <span class="n">optimum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitPSO</span><span class="p">(</span> <span class="n">nClusters</span><span class="p">,</span> <span class="n">nIter</span><span class="o">=</span><span class="n">nIter</span><span class="p">,</span> <span class="n">maxDelta</span><span class="o">=</span><span class="n">maxDelta</span> <span class="p">)</span>
+            <span class="n">dset</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span> <span class="s2">&quot;rank</span><span class="si">%d</span><span class="s2">_</span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">rank</span><span class="p">,</span><span class="n">i</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span> <span class="p">)</span>
+            <span class="n">dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;converged&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">optimum</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span>
+            <span class="n">dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;cost&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">optimum</span><span class="p">[</span><span class="s2">&quot;cost&quot;</span><span class="p">]</span>
+        <span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SliceDensityCorrector.merge"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.SliceDensityCorrector.merge">[docs]</a>    <span class="k">def</span> <span class="nf">merge</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="s2">&quot;&quot;</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Merges the hdf5 files created by each MPI process.</span>
+<span class="sd">        If the optimization mode is different from local, the function does nothing.</span>
+
+<span class="sd">        fname: str</span>
+<span class="sd">            Filename of the resulting hdf5 file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizationMode</span> <span class="o">!=</span> <span class="s2">&quot;local&quot;</span> <span class="p">):</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Barrier</span><span class="p">()</span>
+        <span class="n">rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">fname</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span> <span class="p">):</span>
+                <span class="n">h5file</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;fittedElectronDensity.h5&quot;</span>
+                <span class="n">h5file</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">File</span><span class="p">(</span> <span class="n">fname</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">stamp</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%-m-</span><span class="si">%d</span><span class="s2">-%H-%M-%S&quot;</span><span class="p">)</span>
+
+            <span class="n">group</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s2">&quot;g</span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">stamp</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;tmpOptFiles/optimizationResults</span><span class="si">%d</span><span class="s2">.h5&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">with</span> <span class="n">h5</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">hf</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">dsetname</span> <span class="ow">in</span> <span class="n">hf</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">h5file</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">hf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dsetname</span><span class="p">),</span> <span class="n">group</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">dsetname</span><span class="p">)</span>
+
+            <span class="c1"># Store all the projected clusters</span>
+            <span class="n">dset</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span> <span class="s2">&quot;clusters&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">clusters</span> <span class="p">)</span>
+            <span class="n">dsetK</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span> <span class="s2">&quot;sliceK&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span> <span class="p">)</span>
+            <span class="n">dsetM</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span> <span class="s2">&quot;mask&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">projMask</span> <span class="p">)</span>
+            <span class="n">dsetFF</span> <span class="o">=</span> <span class="n">h5file</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span> <span class="s2">&quot;bestFarField&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bestFF</span> <span class="p">)</span>
+            <span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Data saved in </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="SliceDensityCorrector.plotFit"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.SliceDensityCorrector.plotFit">[docs]</a>    <span class="k">def</span> <span class="nf">plotFit</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">means</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plot the results of the fit</span>
+
+<span class="sd">        means: 1D array</span>
+<span class="sd">            Array of the measn in each cluster (except the cluster of voxels outisde the support)</span>
+
+<span class="sd">        fig: Matplotlib figure</span>
+<span class="sd">            Instance of a matplotlib figure. If given the plot as added to this figure, otherwise a new figure is created</span>
+
+<span class="sd">        Returns: fig</span>
+<span class="sd">            The Matplotlib figure instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">means</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">means</span>
+        <span class="n">ff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buildKspace</span><span class="p">()</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+
+        <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;nipy_spectral&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span> <span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Measured&quot;</span><span class="p">)</span>
+
+        <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">ff</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;nipy_spectral&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Simulated&quot;</span><span class="p">)</span>
+
+        <span class="n">ax3</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">ff</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span><span class="p">)</span>
+        <span class="n">diff</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">projMask</span><span class="o">==</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">ax3</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="n">diff</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;nipy_spectral&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+        <span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Difference&quot;</span><span class="p">)</span>
+
+        <span class="n">ax4</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax4</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span><span class="p">[</span><span class="n">center</span><span class="p">,:],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#e41a1c&quot;</span><span class="p">)</span>
+        <span class="n">ax4</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="n">ff</span><span class="p">[</span><span class="n">center</span><span class="p">,:],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#377eb8&quot;</span><span class="p">)</span>
+
+        <span class="n">ax5</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">ax5</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliceKspace</span><span class="p">[:,</span><span class="n">center</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#e41a1c&quot;</span><span class="p">)</span>
+        <span class="n">ax5</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span> <span class="n">ff</span><span class="p">[:,</span><span class="n">center</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#377eb8&quot;</span><span class="p">)</span>
+
+        <span class="n">ax6</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span>
+        <span class="n">ax6</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">projMask</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;bone&quot;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+        <span class="n">ax6</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span> <span class="s2">&quot;Mask&quot;</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+<div class="viewcode-block" id="SliceDensityCorrector.saveAllSliceClusters"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.SliceDensityCorrector.saveAllSliceClusters">[docs]</a>    <span class="k">def</span> <span class="nf">saveAllSliceClusters</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save all the clusters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentor</span><span class="o">.</span><span class="n">plotAllSlices</span><span class="p">()</span></div></div>
+
+<span class="c1"># Wrapper of the residual function</span>
+<div class="viewcode-block" id="residualNotInstanceMethod"><a class="viewcode-back" href="../azmDensityCorrector.html#azmDensityCorrector.residualNotInstanceMethod">[docs]</a><span class="k">def</span> <span class="nf">residualNotInstanceMethod</span><span class="p">(</span> <span class="n">x</span><span class="p">,</span> <span class="n">instance</span> <span class="p">):</span>
+    <span class="k">return</span> <span class="n">instance</span><span class="o">.</span><span class="n">residual</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, David Kleiven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

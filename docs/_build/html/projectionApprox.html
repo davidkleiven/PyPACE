@@ -1,0 +1,327 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>projectionApprox module &mdash; PyPACE 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="PyPACE 1.0 documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PyPACE
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">projectionApprox module</a></li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyPACE</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>projectionApprox module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/projectionApprox.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-projectionApprox">
+<span id="projectionapprox-module"></span><h1>projectionApprox module<a class="headerlink" href="#module-projectionApprox" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="projectionApprox.MatrixBuilder3D">
+<em class="property">class </em><code class="descclassname">projectionApprox.</code><code class="descname">MatrixBuilder3D</code><span class="sig-paren">(</span><em>dim</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class builds a 3D matrix from rotated projections
+It assumes that the data is rotated around the x-axis (axis=0)
+It uses linear interpolation between two neighbouring slices to fill
+one wedge at the time</p>
+<dl class="docutils">
+<dt>dim: int</dt>
+<dd>Number of dimensions of one of the directon of the matrix.
+The matrix is assumed to have shape [dim,dim,dim]</dd>
+</dl>
+<dl class="method">
+<dt id="projectionApprox.MatrixBuilder3D.insert">
+<code class="descname">insert</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.insert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts slices into the 3D matrix</p>
+<dl class="docutils">
+<dt>slice1: ndarray</dt>
+<dd>2D array containing the first slice in K-space</dd>
+<dt>slice2: ndarray</dt>
+<dd>2D array containing the second slicei in K-space</dd>
+<dt>angleDeg: float</dt>
+<dd>Angle of the first slice</dd>
+<dt>stepAngleDeg: float</dt>
+<dd>Difference between the angle of the first slice and the second slice</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="projectionApprox.MatrixBuilder3D.insert0to45">
+<code class="descname">insert0to45</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.insert0to45"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert0to45" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert slices when the angle of rotation alpha satisfy 0 &lt; alpha &lt;= 45</p>
+<p>See: :func:’~MatrixBuilder3D.insert’</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="projectionApprox.MatrixBuilder3D.insert135to180">
+<code class="descname">insert135to180</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.insert135to180"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert135to180" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert slices when the angle of rotation alpha satisfy135 &lt; alpha &lt;= 180</p>
+<p>See: :func:’~MatrixBuilder3D.insert’</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="projectionApprox.MatrixBuilder3D.insert45to90">
+<code class="descname">insert45to90</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.insert45to90"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert45to90" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert slices when the angle of rotation alpha satisfy 45 &lt; alpha &lt;= 90</p>
+<p>See: :func:’~MatrixBuilder3D.insert’</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="projectionApprox.MatrixBuilder3D.insert90to135">
+<code class="descname">insert90to135</code><span class="sig-paren">(</span><em>slice1</em>, <em>slice2</em>, <em>angleDeg</em>, <em>stepAngleDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.insert90to135"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.insert90to135" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert slices when the angle of rotation alpha satisfy 90 &lt; alpha &lt;= 135</p>
+<p>See: :func:’~MatrixBuilder3D.insert’</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="projectionApprox.MatrixBuilder3D.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#MatrixBuilder3D.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.MatrixBuilder3D.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a slice in the yz-plane of the 3D data</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="projectionApprox.ProjectionPropagator">
+<em class="property">class </em><code class="descclassname">projectionApprox.</code><code class="descname">ProjectionPropagator</code><span class="sig-paren">(</span><em>deltaDistribution</em>, <em>wavelength</em>, <em>voxelsize</em>, <em>kspaceDim=512</em>, <em>maxDeltaValue=5e-05</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#ProjectionPropagator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.ProjectionPropagator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Computes the exit field after propagating across an object using the projection approximation</p>
+<dl class="docutils">
+<dt>deltaDistribution: ndarray</dt>
+<dd>3D array containing the deviation from unitty of the real part of the refractive index</dd>
+<dt>wavelength: float</dt>
+<dd>Wavelength of the X-rays in nano meters</dd>
+<dt>voxelsize: float</dt>
+<dd>Voxelsize in nano meters</dd>
+<dt>kspaceDim: int</dt>
+<dd>Number of elements along one direction of the k-space matrix. The k-space matrix is assumed to have shape
+[kspaceDim,kspaceDim,kspaceDim]</dd>
+<dt>maxDeltaValue: float</dt>
+<dd>Maximum allowed value for the deviation from unity of the real part of the refractive index</dd>
+</dl>
+<dl class="method">
+<dt id="projectionApprox.ProjectionPropagator.generateKspace">
+<code class="descname">generateKspace</code><span class="sig-paren">(</span><em>angleStepDeg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#ProjectionPropagator.generateKspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.ProjectionPropagator.generateKspace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates full 3D kspace representation from the projection approximation</p>
+<dl class="docutils">
+<dt>angleStepDeg: float</dt>
+<dd>Rotation step in degree between successive rotations</dd>
+<dt>Returns: ndarray</dt>
+<dd>3D array representing the Fourier space</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="projectionApprox.ProjectionPropagator.getFarField">
+<code class="descname">getFarField</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/projectionApprox.html#ProjectionPropagator.getFarField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#projectionApprox.ProjectionPropagator.getFarField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the far field scattering pattern based on the projection approxmiation</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, David Kleiven.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
