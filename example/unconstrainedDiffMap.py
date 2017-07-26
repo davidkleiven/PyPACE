@@ -15,13 +15,16 @@ import missingDataInitGenerator as mdig
 import h5py as h5
 import time
 
+NUMBER_OF_ITERATIONS=1000
+RELATIVE_ERROR = 5E-2
+reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
+kspace = "data/NiAu_sample1_3D.npy"
+
 def main():
     timestamp = str( time.strftime("%Y_%m_%d_%H_%M_%S") )
     print ("Started on %s"%(timestamp))
     useCubicMask = False
     ds = 1
-    reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
-    kspace = "data/NiAu_sample1_3D.npy"
     scattered = np.load( kspace )
     realsp = np.load( reconstruct )
     realspPadded = np.zeros(scattered.shape)
@@ -35,7 +38,7 @@ def main():
     support = np.zeros( realspPadded.shape, dtype=np.uint8 )
     support[realspPadded>1E-6*realspPadded.max()] = 1
 
-    del realsp, realspPadded, kspace
+    del realsp, realspPadded
 
     if ( useCubicMask ):
         mask[:,:,:] = 1
@@ -59,7 +62,7 @@ def main():
         constraints = [md.FourierConstraint(mdata),md.RealSpaceConstraint(mdata)]#,md.NormalizationConstraint(mdata)]
         #constraints += orthogonalConstraints
 
-        result = mdata.solve( constraints, niter=10000, relerror=5E-2, show=False, initial=initconditions[i].astype(np.float64),
+        result = mdata.solve( constraints, niter=NUMBER_OF_ITERATIONS, relerror=RELATIVE_ERROR, show=False, initial=initconditions[i].astype(np.float64),
         zeroLimit=1E-4 )
 
         fig = mdata.plot( mdata.getImg() )

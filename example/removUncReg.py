@@ -3,9 +3,14 @@ sys.path.append("pypace")
 import numpy as np
 import removeUncoveredRegion as rur
 
+realspace = "data/average_NiAu_sample1_3D_50_1.npy"
+fname = "data/Run5pFull/unconstrainedModes2017_07_22_11_33_40.h5"
+
 def main( argv ):
-    fname = "data/Run5pFull/unconstrainedModes2017_07_22_11_33_40.h5"
-    realsp = np.load( "data/average_NiAu_sample1_3D_50_1.npy" )
+    if ( "--testImports" in argv ):
+        # Only run this file to make sure that it is able to import all required modules
+        return
+    realsp = np.load( realspace )
     remover = rur.RemoveUncovered( realsp, fname )
     removed = remover.projectToScattered( asint8=True )
     fnameOut = "data/realspaceCorrected.npy"

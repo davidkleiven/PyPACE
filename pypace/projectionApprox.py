@@ -221,5 +221,5 @@ class ProjectionPropagator(object):
             ff1 = self.getFarField()
             kspaceBuilder.insert( ff0, ff1, angles[i], angleStepDeg )
             ff0[:,:] = ff1[:,:]
-            kspaceBuilder.plot()
+            #kspaceBuilder.plot()
         return kspaceBuilder.data

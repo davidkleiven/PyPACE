@@ -2,13 +2,14 @@ import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 
-def main():
-    reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
-    kspace = "data/NiAu_sample1_3D.npy"
+reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
+kspace = "data/NiAu_sample1_3D.npy"
 
+def main():
     ks = np.load( kspace )
     realsp = np.load(reconstruct)
     realspFull = np.zeros(ks.shape)
+    print (ks.shape,realsp.shape)
     start = int( ks.shape[0]/4 )
     end = int( 3*ks.shape[0]/4 )
     realspFull[start:end,start:end,start:end] = realsp

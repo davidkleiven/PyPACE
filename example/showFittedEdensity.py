@@ -10,6 +10,7 @@ from mayavi import mlab
 
 def main():
     fname = "fittedElectronDensity.h5"
+    fname = "data/fittedElectronDensityCorrectedSep.h5"
 
     visualzier = edv.EDensityVisualizer( fname )
     visualzier.plotBest()

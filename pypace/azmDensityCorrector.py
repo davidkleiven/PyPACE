@@ -96,7 +96,7 @@ class SliceDensityCorrector( dc.DensityCorrector ):
             ks[start:end,start:end] += self.segmentor.projectedClusters[i].density*self.segmentor.means[i]
 
         wavenumber = 2.0*np.pi/self.wavelength
-        ks = np.exp(1j*ks*wavenumber*self.voxelsize)-1.0
+        ks = np.exp(1j*ks*wavenumber*self.voxelsize) - 1.0
         ff = np.abs( np.fft.fft2( ks ) )**2
         ff = np.fft.fftshift(ff)
         ff = self.qweight.weightData( ff )

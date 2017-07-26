@@ -13,6 +13,10 @@ except ImportError as exc:
     haveMayavi = False
 import json
 
+reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
+reconstruct = "data/realspaceCorrected.npy"
+kspace = "data/NiAu_sample1_3D.npy"
+
 def main( argv ):
     if ( len(argv) != 1 ):
         print ("Usage: python azmExample.py params.json")
@@ -21,9 +25,6 @@ def main( argv ):
     infile.close()
     nIter = params["nIter"]
 
-    reconstruct = "data/average_NiAu_sample1_3D_50_1.npy"
-    reconstruct = "data/realspaceCorrected.npy"
-    kspace = "data/NiAu_sample1_3D.npy"
     comm = MPI.COMM_WORLD
     dCorr = adc.SliceDensityCorrector( reconstruct, kspace, 0.17, 55.2, comm=comm, debug=False,
     projectionAxis=2, segmentation="voxels" )

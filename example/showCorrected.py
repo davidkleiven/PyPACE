@@ -8,7 +8,10 @@ mpl.rcParams["axes.unicode_minus"] = False
 from matplotlib import pyplot as plt
 from mayavi import mlab
 
-def main():
+def main( argv ):
+    if ( "--testImports" in argv ):
+        # Just run this file to check that it is able to import all modules
+        return
     recs = np.load( "data/realspaceCorrected.npy" )
     visualizer = edv.EDensityVisualizer()
     #visualizer.plotBest( data=recs.astype(np.float16)[::4,::4,::4] )
@@ -17,4 +20,4 @@ def main():
     plt.show()
 
 if __name__ == "__main__":
-    main()
+    main( sys.argv[1:] )
