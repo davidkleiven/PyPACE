@@ -23,6 +23,15 @@ except ImportError as exc:
 class SliceDensityCorrector( dc.DensityCorrector ):
     def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None, debug=False,
     projectionAxis=2, segmentation="voxels" ):
+        """
+        SliceDensityCorrector. Correcting the density obtained from the phase retrieval algorithm
+        by using only one slice in Fourier space.
+
+        See the documentation for :class:'DensityCorrector' for explination of the first arguments
+
+        projectionAxis: int
+            Axis along which the projection of the object should be computed. Has to 0,1 or 2. Default is 2
+        """
         dc.DensityCorrector.__init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=comm, debug=False,
         segmentation=segmentation )
 
@@ -57,6 +66,12 @@ class SliceDensityCorrector( dc.DensityCorrector ):
     def plotSliceKspace( self, fig=None ):
         """
         Plots the slice of the measured data
+
+        fig: Matplit figure
+            If given the plot will be added to the existing figure. Otherwise a new figure is created
+
+        Returns: Matplotlib figure
+            Instance of the figure
         """
         if ( fig is None ):
             fig = plt.figure()
@@ -65,6 +80,12 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         return fig
 
     def needPadding( self ):
+        """
+        Returns: bool
+            True if the real space object is half the size in each dimension of the
+            Fourier domain. Hence, it needs to be padded.
+            False otherwise.
+        """
         shp1 = self.sliceKspace.shape
         shp2 = self.segmentor.projectedClusters[0].density.shape
         pad = False
@@ -106,6 +127,9 @@ class SliceDensityCorrector( dc.DensityCorrector ):
     def residual( self, x ):
         """
         Computes the sum of difference squared between the measured and the simulated data
+
+        x: 1D-array
+            Array with the means of the clusters
         """
         self.segmentor.means[1:] = x
         self.segmentor.means[0] = 0.0
@@ -113,6 +137,12 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         return pcmp.maskedSumOfSquares( self.sliceKspace, ff, self.projMask )
 
     def fitSingle( self, maxDelta=1E-4 ):
+        """
+        Perform local optimization from a random initial condisiont
+
+        maxDelta: float
+            Maximum value of the deviation from unity of the real part of the refractive index
+        """
         x0 = np.random.rand( len(self.segmentor.means)-1 )*maxDelta
         #x0 = self.segmentor.means*maxDelta/np.max(self.segmentor.means)
         #x0 = x0[1:]
@@ -125,6 +155,15 @@ class SliceDensityCorrector( dc.DensityCorrector ):
     def fitPSO( self, nClusters, nIter=1000, maxDelta=1E-4 ):
         """
         Perform the curve fit using Particle Swarm Optimization from the pyswarm module
+
+        nClusers: int
+            Number of clusters
+
+        nIter: int
+            Maximum number of iterations. Default is 1000
+
+        maxDelta: float
+            Maximum value of the deviation from unity of the real part of the refractive index
         """
         if ( hasPSO ):
             lb = np.zeros( len(self.segmentor.means)-1 )
@@ -144,6 +183,27 @@ class SliceDensityCorrector( dc.DensityCorrector ):
     def fit( self, nIter=1000, nClusters=6, maxDelta=1E-4, useSeparateClusterAtCenter=False, centerClusterWidth=0, mode="local" ):
         """
         Fit the e-density parameters to the scattering pattern
+
+        nIter: int
+            Maximum number of iterations
+
+        nClusters: int
+            Number of clusters
+
+        maxDelta: float
+            Maximum value of the deviation from unity of the real part of the refractive index
+
+        useSeparateClusterAtCenter: bool
+            If True a cubic cluster at the center of the scatterer is introduced
+
+        centerClusterWidth: int
+            Width of the cube introduced at then center in voxels.
+            If useSeparateClusterAtCenter is False this argument is ignored
+
+        mode: str
+            Optimization mode. Has to be either. local or pso.\n
+            local - run multiple local optimizations and pick the best result\n
+            pso - Use Particle Swarm Optimization scheme
         """
         if ( mode != "local" and mode != "pso" ):
             raise ValueError("mode has to be either local or pso")
@@ -179,6 +239,13 @@ class SliceDensityCorrector( dc.DensityCorrector ):
         h5file.close()
 
     def merge( self, fname="" ):
+        """
+        Merges the hdf5 files created by each MPI process.
+        If the optimization mode is different from local, the function does nothing.
+
+        fname: str
+            Filename of the resulting hdf5 file
+        """
         if ( self.optimizationMode != "local" ):
             return
         self.comm.Barrier()
@@ -211,6 +278,15 @@ class SliceDensityCorrector( dc.DensityCorrector ):
     def plotFit( self, means, fig=None ):
         """
         Plot the results of the fit
+
+        means: 1D array
+            Array of the measn in each cluster (except the cluster of voxels outisde the support)
+
+        fig: Matplotlib figure
+            Instance of a matplotlib figure. If given the plot as added to this figure, otherwise a new figure is created
+
+        Returns: fig
+            The Matplotlib figure instance
         """
         self.segmentor.means[1:] = means
         ff = self.buildKspace()

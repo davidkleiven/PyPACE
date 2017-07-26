@@ -14,6 +14,15 @@ except ImportError as exc:
     haveMayavi = False
 
 class Segmentor(object):
+    """
+    Class that segments an object into clusters based on the voxel value
+
+    data: ndarray
+        Array to be segmented
+
+    comm: MPI.Comm
+        MPI communicator object. If not given the process will run a single processor
+    """
     def __init__( self, data, comm=None ):
         self.data = data
         self.means = None
@@ -27,6 +36,12 @@ class Segmentor(object):
     def kmeans( self, Nclusters, maxIter=1000 ):
         """
         Apply k-means clustering to the data
+
+        Nclusters: int
+            Number of clusters
+
+        maxIter: int
+            Maximum number of iterations
         """
         self.means = np.linspace( self.data.min(), self.data.max(), Nclusters, endpoint=False )
         for i in range(maxIter):
@@ -43,6 +58,9 @@ class Segmentor(object):
     def createSeparateClusterCenter( self, width ):
         """
         Extracts the center of the object and creates a separate cluster for it
+
+        width: int
+            Width of the cubic region in voxels
         """
         maxID = len(self.means)
         center = int( self.clusters.shape[0]/2 )
@@ -59,13 +77,22 @@ class Segmentor(object):
             self.data[self.clusters==i] = self.means[i]
 
     def getSingleCluster( self, clusterIndx ):
+        """
+        clusterIndx: int
+            ID of the cluster to return
+        Returns: ndarray
+            3D array of voxels that belong to the same cluster
+        """
         data = np.zeros(self.data.shape)
         data[self.clusters==clusterIndx] = 1
         return data
 
     def projectClusters( self, axis=2 ):
         """
-        Perform azimuthal average of all the clusters
+        Project clusters along an axis
+
+        axis: int
+            Axis to project along. Has to be 0,1 or 2
         """
         self.projectedClusters = []
         mpArgs = []
@@ -82,6 +109,9 @@ class Segmentor(object):
         args[0].project( self.clusters, axis=args[1] )
 
     def plotAllSlices( self ):
+        """
+        Plot cut planes through all clusters
+        """
         if ( len(self.projectedClusters) == 0 ):
             print ("There are no clusters. Have the 3D matrix been reconstructed yet?")
         for i in range(len(self.projectedClusters)):
@@ -89,6 +119,16 @@ class Segmentor(object):
             fig.savefig("figures/azm%d.png"%(i))
 
     def plotCluster( self, clusterID, downsample=4 ):
+        """
+        Plot single cluster using Mayavi
+
+        clusterID: int
+            ID of the cluster to plot
+
+        downsample: int
+            Downsampling factor. An a standard computer Mayavi runs slow for large datasets.
+            Hence, it may be an advatage to reduce the array before plotting it
+        """
         if ( not haveMayavi ):
             return
         fig = mlab.figure( bgcolor=(0,0,0) )
@@ -130,13 +170,25 @@ class Segmentor(object):
         mlab.show()
 
 class ProjectedCluster( object ):
+    """
+    Class containing a projected cluster
+
+    id: int
+        ID of the cluster
+    """
     def __init__( self, id ):
         self.density = None
         self.id = id
 
     def project( self, clusters, axis=2 ):
         """
-        Performs azimuthal average when rotating around the axis specified by the axis argument
+        Project cluster along axis
+
+        clusters: ndarray
+            Array containning the cluster ID of each voxel
+
+        axis: int
+            Axis to project along. Has to be 0,1 or 2
         """
         assert( clusters.shape[0] == clusters.shape[1] )
         assert( clusters.shape[0] == clusters.shape[2] )
@@ -147,6 +199,12 @@ class ProjectedCluster( object ):
     def plot( self, fig=None ):
         """
         Plot the azimuthally averaged domain
+
+        fig: Matplotlib figure
+            If given the plot will be added to the figure, otherwise a new figure is created
+
+        Returns: fig
+            Instance of the figure
         """
         if ( fig is None ):
             fig = plt.figure()

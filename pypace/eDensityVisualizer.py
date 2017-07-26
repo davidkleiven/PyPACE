@@ -19,6 +19,12 @@ from scipy import ndimage as ndimg
 from scipy import misc as msc
 
 class EDensityVisualizer( object ):
+    """
+    Class for visualizing the fitted real part of the refractive index
+
+    fname: str
+        Filename to the HDF5 file containing the fits. Only the best fit from this file is used
+    """
     def __init__( self, fname="" ):
         self.fname = fname
         self.ff = None
@@ -67,6 +73,12 @@ class EDensityVisualizer( object ):
     def getEdensity( self, dset ):
         """
         Get the real part of the refractive index
+
+        dset: 1D array
+            Array containing the mean value in each cluster
+
+        Return: ndarray
+            3D array where the value in each cluster is replaced by its mean
         """
         self.segmentor.means = dset
 
@@ -74,6 +86,12 @@ class EDensityVisualizer( object ):
         return self.segmentor.data
 
     def plotOutline( self, data=None ):
+        """
+        Plot the surface of the fitted electron density
+
+        data: ndarray
+            If given this dataset is used. Otherwise the best dataset from the fitting is used
+        """
         if ( data is None ):
             bestDset = self.getBest()
             edensity = self.getEdensity(bestDset)
@@ -88,7 +106,10 @@ class EDensityVisualizer( object ):
 
     def plotBest( self, data=None ):
         """
-        Create a 3D plot of the best fit
+        Create a 3D plot data
+
+        data: ndarray
+            If given this data is used. Otherwise the best dataset from the fitting is used
         """
         if ( data is None ):
             bestDset = self.getBest()
@@ -108,6 +129,13 @@ class EDensityVisualizer( object ):
     def plotCluster( self, id, downsample=4 ):
         """
         Plot clusters
+
+        id: int
+            ID of the cluster to plot
+
+        downsample: int
+            Factor to downsample the array in each direction.
+            This makes Mayavi faster.
         """
         if ( haveMayavi ):
             fig = mlab.figure(bgcolor=(0,0,0))
@@ -121,6 +149,9 @@ class EDensityVisualizer( object ):
     def plotBestRadialAveragedDensity( self ):
         """
         Plot the radial averaged density
+
+        Returns: Matplotlib figure
+            Figure where the plot is
         """
         bestDset = self.getBest()
         edensity = self.getEdensity(bestDset)
@@ -137,6 +168,15 @@ class EDensityVisualizer( object ):
     def plot1DAngles( self, anglesDeg, data=None ):
         """
         Plot the density along different lines in the XY plane
+
+        anglesDeg: list
+            List if angles at which to plot the electron density along
+
+        data: ndarray
+            If given this dataset is used. Otherwise the best dataset from the fit is used
+
+        Returns: Matplotlib figure
+            Figure of the plot
         """
         if ( data is None ):
             bestDset = self.getBest()
@@ -174,6 +214,9 @@ class EDensityVisualizer( object ):
     def plotFit( self ):
         """
         Compare the simulated and the measured scattering pattern
+
+        Returns: Matplotlib figure
+            Figure of the plots
         """
         fig = plt.figure()
         ax1 = fig.add_subplot(2,3,1)

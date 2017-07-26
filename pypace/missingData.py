@@ -15,16 +15,23 @@ import multiprocessing as mp
 import subprocess as sub
 
 class MissingDataAnalyzer( object ):
+    """
+    Analyse and can identify structures that only scatters into the region
+    of missing data
+    """
     def __init__( self, mask, support ):
+        """
+        MissingDataAnalyzer
+
+        mask:
+            3D array of type np.uint8. It is 1 if the voxel is measured and 0 if the voxel is not measured
+        support:
+            3D array of type np.uint8. It is 1 if the voxel belongs to the scatterer and zero if it is outside
+        """
         self.mask = mask
         self.support = support
         self.beta = -0.9
 
-        #self.ftsource = pfw.empty_aligned( self.mask.shape, dtype="complex128" )
-        #self.ftdest = pfw.empty_aligned( self.mask.shape, dtype="complex128" )
-        #self.ftForw = pfw.FFTW( self.ftsource, self.ftdest, axes=(0,1,2), threads=mp.cpu_count() )
-        #self.ftBack = pfw.FFTW( self.ftdest, self.ftsource, axes=(0,1,2), direction="FFTW_BACKWARD", threads=mp.cpu_count() )
-        #self.ftsource[:,:,:] = self.support
         self.constraints = None
         self.fixedPoint = None
         self.allErrors = []
@@ -34,6 +41,9 @@ class MissingDataAnalyzer( object ):
     def step( self, current ):
         """
         Iterate the solution one step
+
+        current:
+            List of the duplicates of the current image
         """
         x = copy.deepcopy( current )
         pa = self.projectA( self.fB(x) )
@@ -55,9 +65,12 @@ class MissingDataAnalyzer( object ):
         return current, np.array(error).max()
 
     def fA( self, x ):
-        #result = x/self.beta
-        #pa = self.projectA(x) # This modifies x
-        #return pa - pa/self.beta + result
+        """
+        Returns the fA function from https://en.wikipedia.org/wiki/Difference-map_algorithm
+
+        x:
+            List of the duplicates of the object
+        """
         result = []
         for entry in x:
             result.append( copy.deepcopy(entry) )
@@ -67,9 +80,12 @@ class MissingDataAnalyzer( object ):
         return x
 
     def fB( self, x ):
-        #res = x/self.beta
-        #pb = self.projectB(x)
-        #return pb + pb/self.beta - res
+        """
+        Returns the fB function in https://en.wikipedia.org/wiki/Difference-map_algorithm
+
+        x:
+            List of the duplicates of the object
+        """
         pb = self.projectB( x )
         for i in range( len(x) ):
             x[i] = pb + pb/self.beta - x[i]/self.beta
@@ -77,7 +93,10 @@ class MissingDataAnalyzer( object ):
 
     def projectB( self, x ):
         """
-        Make x-consistent with the Fourier domain constraint
+        Average all the duplicates of the object
+
+        x:
+            List of all the duplicates of the object
         """
         #self.ftsource[:,:,:] = x
         #self.ftForw()
@@ -95,7 +114,10 @@ class MissingDataAnalyzer( object ):
 
     def projectA( self, x ):
         """
-        Make x-consistent with the real space constraint
+        Apply each the constraints to the corresponding duplicate
+
+        x:
+            List of all the duplicates of the object
         """
         #mdc.applyRealSpace( self, x )
         assert( len(x) == len(self.constraints) )
@@ -106,6 +128,9 @@ class MissingDataAnalyzer( object ):
     def plot( self, x ):
         """
         Plots slices in both real space and Fourier space of the image
+
+        x:
+            One representation of the object (note not a list of duplicates as in many of the other functions)
         """
         fig = plt.figure()
         ax1 = fig.add_subplot(2,3,1)
@@ -153,6 +178,9 @@ class MissingDataAnalyzer( object ):
     def computeConstrainedPower( self, img ):
         """
         Computes the fraction of constrained power by the realspace constraint and the Fourier constraint
+
+        img:
+            The 3D object
         """
         norm1 = np.sqrt( np.sum(img**2) )
         outside = np.sqrt( np.sum( img[self.support==0]**2) )
@@ -162,6 +190,12 @@ class MissingDataAnalyzer( object ):
         return 0.5*(outside/norm1 + inside/norm2)
 
     def getMaxVal( self, allimgs ):
+        """
+        Computes the maximum value in of all the duplicates
+
+        allimgs:
+            List of all the duplicates
+        """
         maxval = -1E30
         for img in allimgs:
             trial = np.abs(img).max()
@@ -180,17 +214,41 @@ class MissingDataAnalyzer( object ):
 
     def solve( self, constraints, niter=1000, relerror=0.0, show=False, initial=None, zeroLimit=0.0 ):
         """
-        Find a function that satisfy the real space constraint, but scatter only into the region that is not measured
-        Arguments:
-            niter - maximum number of iterations
-            relerror - convergence criteria. The simulation stops when max(Pa-Pb)/max(Pb) < relerror
-                Pa is the result of the first projection operator and Pb is the result of the second
-            show - Boolean if True a plot of the solution is showed
-            initial - initial image. If None, the image is initialized with random numbers
-            zeroLimit - Upper limit of what is considered as the zero image. If the maximum value
-                of the image is below this number, the image is considered to consist of only zeros and the simulation is
-                aborted. Note that the zero image typically satisfy all the constraints perfectly, so one will never escape
-                from the zero image.
+        Find a function that satisfy all the constraints given in the constraints list
+
+        constraints: list
+            List of constraints that the solution should satisfy
+
+        nIter: int
+            Maximum number of iterations
+
+        relerror: float
+            If the relative error between the objects produced when applying the different constraints is less
+            than this number, the solution is found
+
+        show: bool
+            If True the plot of the resulting image is shown when the solution has been found or the maximum
+            number of iterations have been reached
+
+        initial: ndarray
+            Initial condition from which the difference map starts from.
+            Default is None, and then the initial object is filled with random numbers
+
+        zeroLimit: float
+            If the maximum value in the image is less than this number, the algorithm stops.
+            The image is taken to consist of only zeros.
+            An object consisting of only zeros will in many cases satisfy all the constraint and it is a trivial
+            solution which is normally is not of interest.
+            Hence, of the algorithm approaces this solution it can be of interest to just stop and pass another
+            initial condition.
+
+        Returns: dictionary
+            Result dictionay having the keys
+            message - A message describing the reason for terminating\n
+            constrainedPower - the constrained power of the solution\n
+            error - array of the relative error on each iteration step\n
+            bestError - the minimum relative error\n
+            status - True if the convergence criteria was reached, and False otherwise
         """
         self.constraints = constraints
         for cnst in self.constraints:
@@ -260,6 +318,9 @@ class MissingDataAnalyzer( object ):
 
 # Define constraint classes
 class Constraint( object ):
+    """
+    Generic constraint
+    """
     def __init__( self, missingData, weight=1.0 ):
         self.analyzer = missingData
         if ( not isinstance(missingData, MissingDataAnalyzer ) ):
@@ -267,18 +328,55 @@ class Constraint( object ):
         self.weight = weight
 
     def apply( self, img ):
+        """
+        Applies the constraint to img. All child classes has to implement this function.
+
+        img: ndarray
+            An array representing the object.
+        """
         raise NotImplementedError("Child classes has to implement this function")
 
 class RealSpaceConstraint( Constraint ):
+    """
+    Realspace constraint.
+    Voxels outside the support are set to zero and voxels inside the support
+    are left unchaged.
+    """
     def __init__( self, missingData, weight=1.0 ):
+        """
+        RealSpaceConstraint
+
+        missingData: MissingDataAnalyzer
+            An instance of the missingDataAnalyzer of which this constraint is passe to
+        """
         Constraint.__init__( self, missingData, weight=weight )
 
     def apply( self, img ):
+        """
+        Applies the realspace constraint. Voxels inside the support of the missingDataAnalyzer are left unchanged,
+        and voxels outisde are set to zero.
+
+        img: ndarray
+            The object on which the constraint is applied
+
+        Returns: ndarray
+            The object after the constraint have been applied
+        """
         mdc.applyRealSpace( self.analyzer, img )
         return img
 
 class FourierConstraint( Constraint ):
+    """
+    Fourier constraint. Intensity belonging to the region not being measured is left unchanged, and
+    intensitis in the region of measured data is set to zero.
+    """
     def __init__( self, missingData, weight=1.0 ):
+        """
+        FourierConstraint
+
+        missingData: MissingDataAnalyzer
+            Instance of the missingDataAnaluzer of which the constraint is passed
+        """
         Constraint.__init__( self, missingData, weight=weight )
         self.ftsource = pfw.empty_aligned( missingData.mask.shape, dtype="complex128" )
         self.ftdest = pfw.empty_aligned( missingData.mask.shape, dtype="complex128" )
@@ -287,6 +385,17 @@ class FourierConstraint( Constraint ):
         self.ftsource[:,:,:] = missingData.support
 
     def apply( self, img ):
+        """
+        Applies the Fourier constraint.
+        Intensities inside the region of measured data is set to zero, and intensities outside this region
+        is left unchanged
+
+        img: ndarray
+            The object of which the constraint is applied
+
+        Returns: ndarray
+            The real part of the inverse Fourier transform after the constraint in Fourier domain has been applied
+        """
         self.ftsource[:,:,:] = img
         self.ftForw()
         ft = self.ftdest
@@ -295,12 +404,36 @@ class FourierConstraint( Constraint ):
         return self.ftsource.real
 
 class OrthogonalConstraint( Constraint ):
+    """
+    Orthogonality constraint.
+    The image is forced to be orthogonal to this image
+    """
     def __init__( self, missingData, orthogData, weight=1.0 ):
+        """
+        OrthogonalConstraint.
+
+        missingData: MissingDataAnalyzer
+            Instance of the missingDataAnalyzer of which this constraint is passed
+
+        orthogData: ndarray
+            Array representing the object of which the solution should be orthogonal to
+        """
         Constraint.__init__( self, missingData, weight=weight )
         self.orthogData = orthogData
         self.orthogData /= np.sqrt( np.sum(self.orthogData**2) )
 
     def apply( self, img ):
+        """
+        Applies the ortogonal constraint.
+        The object is made orthogonal to the data by subtracting the projecting of the current solution
+        to the data array passed to this class.
+
+        img: ndarray
+            Array of the current object
+
+        Returns: ndarray
+            The new object after it has been made orthogonal to the image passed to this object
+        """
         # Project onto
         proj = np.sum( img*self.orthogData )
         img -= proj*self.orthogData

@@ -18,8 +18,36 @@ import pickle as pck
 
 
 class DensityCorrector(object):
+    """
+    Main class for correcting the density obtained by the phase retrieval algorithm
+
+
+    reconstructedFname: str
+        Filename where the image reconstructed with the phase retrieval algorithm
+
+    kspaceFname: str
+        Filename of the the 3D scattering data
+
+    wavelength: float
+        Wavelength of the incoming X-ray beam in nano meters
+
+    voxelsize: float
+        Size of the voxels in nano meters
+
+    comm: MPI.comm
+        MPI communicator object. If None, the process run on a single core
+
+    debug: bool
+        If True debug messages will be printed.
+
+    segmentation: str
+        Algorithm used for segmentation. Currently this has to be voxels
+    """
     def __init__( self, reconstructedFname, kspaceFname, wavelength, voxelsize, comm=None, debug=False,
     segmentation="voxels" ):
+        """
+        DensityCorrector
+        """
         self.reconstructed = np.abs( np.load( reconstructedFname ).astype(np.float64) )
         self.kspace = np.load( kspaceFname ).astype(np.float64)
         self.kspaceIntegral = self.kspace.sum()
@@ -46,10 +74,16 @@ class DensityCorrector(object):
     def plotRec( self, show=False, cmap="inferno" ):
         """
         Plots cuts in the reconstructed object through the center
-        Returns:
-        fig, [ax1,ax2,ax3]
-        fig: Figure object
-        [ax1,ax2,ax3]: array of the three ax objects describing the subplots
+
+        show: bool
+            If True pyplot.show() is called at the end
+
+        cmap: str
+            Colormap used. Default is inferno
+
+        Returns: fig, [ax1,ax2,ax3]
+            fig - Matplotlib figure object\n
+            [ax1,ax2,ax3] - list of the Matplotlib axes object created
         """
         assert( len(self.reconstructed.shape) == 3 )
         fig = plt.figure()
@@ -73,10 +107,16 @@ class DensityCorrector(object):
     def plotKspace( self, data, cmap="inferno" ):
         """
         Plots cuts in the kspace scattering pattern of the object
-        Returns:
-        fig, [ax1,ax2,ax3]
-        fig: Figure object
-        [ax1,ax2,ax3]: array of the three ax objects describing the subplots
+
+        data: ndarray
+            3D array of the scattering data
+
+        cmape: str
+            Colormap. Default inferno
+
+        Returns:         fig, [ax1,ax2,ax3]
+        fig - Figure object\n
+        [ax1,ax2,ax3] - list of the three ax objects describing the subplots
         """
         assert( len(data.shape) == 3 )
         fig = plt.figure()
@@ -99,11 +139,21 @@ class DensityCorrector(object):
 
     def segment( self, Nclusters, maxIter=1000 ):
         """
-        Segments the image into Nclusters
+        Segments the image into N clusters
+
+        Nclusters - number of clusters to use
+
+        maxIter - Maximum number of iterations. Default is 1000
         """
         self.segmentor.kmeans( Nclusters, maxIter=maxIter )
 
     def removeInternalPointsFromSurroundingCluster( self ):
+        """
+        Creates a separate cluster of voxels inside the support that
+        was segmented into the same clusters as the surrounding region not
+        belonging to the support
+        """
+
         internal = np.zeros(self.reconstructed.shape,dtype=np.uint8)
         internal[ self.reconstructed>1E-6*self.reconstructed.max()] = 1
         newcluster = np.logical_and( self.segmentor.clusters==0, internal==1 )
@@ -113,8 +163,16 @@ class DensityCorrector(object):
     def plotClusters( self, cluster, cmap="bone" ):
         """
         Plots individual clusters given by the cluster array
-        Example:
-        this.plotClusters(0)
+
+        clusters. int
+            ID of the cluster to plot
+
+        cmap: str
+            Colormap. Default is bone
+
+        Returns: fig, ax
+            fig - Matplotlib figure object\n
+            ax - Matplotlib ax object
         """
         fig = plt.figure()
         ax = []
@@ -141,6 +199,15 @@ class DensityCorrector(object):
         self.mask[self.kspace > 10.0*self.kspace.min()] = 1
 
     def plotMask( self, fig=None ):
+        """
+        Plots the mask
+
+        fig: Matplotlib figure object
+            If given the mask is plotted on an existing figure. Otherwise a new figure instance is created
+
+        Returns: fig
+            The Matplotlib figure object
+        """
         if ( fig is None ):
             fig = plt.figure()
         center = int( self.mask.shape[0]/2 )
@@ -154,11 +221,17 @@ class DensityCorrector(object):
 
     def getMeanSqError( self, angle ):
         """
-        Returnes the mean square error between the simulated and the measured dataset
+        Returns the mean square error between the simulated and the measured dataset
         This function is only used to se if the simulated pattern is rotated with respect to the measured.
         It is not used in the fitting procedure and thus a very accurate mean square error is not needed
         Hence, all the arrays are downsampled by a factor 4 to speed up the determination of the
         overall rotation angle
+
+        angle: float
+            Rotates the K-space by angle. The angles is given in degress
+
+        Returns: float
+            The mean square error between the original K-space and the rotated
         """
         ds = 4
         rotated = sciinterp.rotate( self.newKspace[::ds,::ds,::ds], angle, axes=(1,0), reshape=False)
@@ -167,6 +240,9 @@ class DensityCorrector(object):
     def optimizeRotation( self, nangles=24 ):
         """
         Computes the rotation angle between the measured and the simulated scattering pattern
+
+        nangles: int
+            Number of angles used when determining the optimal rotation
         """
         angle = np.linspace(0,180,nangles)
         meanSquareError = np.zeros(len(angle))
@@ -202,6 +278,10 @@ class DensityCorrector(object):
     def buildKspace( self, angleStepDeg ):
         """
         Compute 3D scattering pattern using the projection approximation
+
+        angleStepDeg: float
+            Number of degrees to rotate the object with on each step.
+            The higher step the faster the 3D kspace is built, but the accuracy becomes poor.
         """
         if ( not self.qweight.weightsAreComputed ):
             self.qweight.compute( showPlot=True )
@@ -229,6 +309,21 @@ class DensityCorrector(object):
     def fit( self, nClusters, angleStepKspace=10.0, maxDelta=1E-4, nGAgenerations=50, printStatusMessage=True ):
         """
         Fit the simulated scattering pattern to the experimental by using the Genetic Algorithm
+
+        nClusters: int
+            Number of clusters to use in the segmentation
+
+        angleStepKspace: float
+            Rotation step to use when the 3D kspace is built. Default: 10 degree
+
+        maxDelta: float
+            Maximum value of the deviation from unity of the real part of the refractive index
+
+        nGAgenerations: int
+            Number of generations in the Genetic Algorithm. Default is 50
+
+        printStatusMessage: bool
+            If True status messages after each generation is printed
         """
         self.segment( nClusters )
         self.ga = ga.GeneticAlgorithm( self, maxDelta, self.comm, nGAgenerations, debug=self.debug )

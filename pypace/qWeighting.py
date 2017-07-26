@@ -11,6 +11,13 @@ import numpy as np
 import categorize as catg
 
 class Qweight(object):
+    """
+    Computing the weighting of the scattered data to make them more uniform as a function of scattering
+    wavevector q
+
+    kspaceData: ndaarray
+        3D array representing the scattered data
+    """
     def __init__( self, kspaceData ):
         self.data = kspaceData
         self.interscept = 1.0
@@ -21,6 +28,12 @@ class Qweight(object):
         self.gaussianFitted = False
 
     def weightData( self, data ):
+        """
+        Computes the weight by fitting a power law to the scattered data averaged over solid angles
+
+        data: ndarray
+            Data to fit a radial power law to
+        """
         if ( not self.weightsAreComputed ):
             raise RuntimeError("Power law fit has not been performed")
 
@@ -32,13 +45,12 @@ class Qweight(object):
             raise TypeError("Data has to be numpy array of dimension 2 or 3")
 
     def compute( self, showPlot=False ):
-        # Perform a radial average
-        #qxMax = self.data.shape[0]/2
-        #qyMax = self.data.shape[1]/2
-        #qzMax = self.data.shape[2]/2
-        #rmax = np.sqrt( qxMax**2 + qyMax**2 + qzMax**2 )
-        #Nbins = int( self.data.shape[0]/4 )
-        #rbins = np.linspace(0.0, rmax, Nbins)
+        """
+        Fit a radial power law to the scattering data
+
+        showPlot: bool
+            If True a plot of the fit will appear
+        """
         rbins = self.getRadialBins()
         radialMean = catg.radialMean( self.data, len(rbins) )
 
@@ -67,10 +79,19 @@ class Qweight(object):
     def getWeight( self, q ):
         """
         Return the weighting factor
+
+        q: float, ndarray
+            Radial scattering wave vector
         """
         return np.exp(self.interscept)*q**self.slope
 
     def getRadialBins( self ):
+        """
+        Computes the radial binning
+
+        Returns: ndarray
+            Return array containing the radial bins
+        """
         qxMax = self.data.shape[0]/2
         qyMax = self.data.shape[1]/2
         qzMax = self.data.shape[2]/2
@@ -82,6 +103,9 @@ class Qweight(object):
     def fitRadialGaussian( self, showPlot=True ):
         """
         Perform a Gaussian fit to radial averaged pattern
+
+        showPlot: bool
+            If True a plot of the fitted data will appear
         """
         rbins = self.getRadialBins()
         radialMean = catg.radialMean( self.data, len(rbins) )
@@ -95,11 +119,23 @@ class Qweight(object):
         self.gaussianFitted = True
 
     def radialGaussian( self, r ):
+        """
+        Get a radial Gaussian approximation of the scattering data
+
+        r: float, ndarray
+            Radius in k-space
+        """
         if ( not self.gaussianFitted ):
             self.fitRadialGaussian( showplot=False )
         return np.exp(self.gaussianInterscept)*np.exp(self.gaussianSlope*r**2)
 
     def fillMissingDataWithGaussian( self, mask ):
+        """
+        Fill the region of missing data with a Gaussian fit
+
+        mask: ndarray
+            3D array which is 1 if the voxel is measured and 0 if it is not measured
+        """
         self.fitRadialGaussian()
         N = self.data.shape[0]
         x = np.linspace(-N/2, N/2, N )

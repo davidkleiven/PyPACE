@@ -7,6 +7,15 @@ mpl.rcParams["axes.unicode_minus"] = False
 from matplotlib import pyplot as plt
 
 class RemoveUncovered( object ):
+    """
+    Class for removing the projection of the reconstructed object that scatters into the region of missing data
+
+    reconstructed: ndarray
+        3D array containing the reconstructed object
+
+    fname: str
+        Filename to a HDF5 file containing the unconstrained modes
+    """
     def __init__( self, reconstructed, fname ):
         self.realspace = reconstructed
 
@@ -28,6 +37,9 @@ class RemoveUncovered( object ):
         self.realspace[start:end,start:end,start:end] = reconstructed
 
     def makeOrthogonal( self ):
+        """
+        Run the Gram-Schmidt orthogonalization procedure on the orthogonal modes
+        """
         if ( len(self.modes) <= 1 ):
             print ("Less than one mode. Nothing to do.")
             return
@@ -45,6 +57,15 @@ class RemoveUncovered( object ):
         return self.modes
 
     def projectToScattered( self, asint8=False ):
+        """
+        Subtract the projection of the reconstructed that scatters into the region of missing data
+
+        asint8: bool
+            If True the resulting object will be converted to np.int8
+
+        Returns: ndarray
+            3D array representing the corrected object
+        """
         if ( self.realspace is None ):
             raise TypeError("No realspace object given")
         for mode in self.modes:
@@ -56,17 +77,32 @@ class RemoveUncovered( object ):
         return self.realspace
 
     def toInt8( self, data ):
+        """
+        Convert array to np.int8
+
+        data: float, ndarray
+            Array to be converted
+
+        Returns: ndarray
+            The converted array
+        """
         upper = np.abs(data).max()
         data *= 127/upper
         return data.astype(np.int8)
 
     def removeUncoveredFeatures( self ):
+        """
+        Remove features that scatters into the region of missing data
+        """
         for mode in self.modes:
             proj = np.sum( self.realspace*mode )
             self.realspace -= proj*mode
         return self.realspace
 
     def plot( self ):
+        """
+        Plot the orthogonal unconstrained modes
+        """
         #mask = np.load("maskTest.npy")
         #support = np.load("supportTest.npy")
         self.mask = np.fft.fftshift(self.mask)
